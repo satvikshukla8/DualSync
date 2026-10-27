@@ -97,7 +97,7 @@ public partial class MainWindow : Window
             await engine.StartAsync(model.Snapshot);
             model.Running = true;
             if (model.MasterModeIndex == (int)MasterMode.SourceEndpoint) model.MirrorSourceVolume(engine.SourceVolume);
-            model.Status = "Playing · independent EQ, volume, delay, and routing are active";
+            model.Status = PlaybackStatus();
             lastError = null; wanted = true;
         }
         catch (Exception ex) { ShowError("Audio could not start", ex); model.Running = false; nextRetry = DateTime.UtcNow.AddSeconds(10); }
@@ -144,15 +144,17 @@ public partial class MainWindow : Window
         ticking = true;
         try
         {
+            if (engine.IsRunning) engine.RefreshSourceVolume();
+            if (engine.IsRunning && model.Status.StartsWith("Playing", StringComparison.Ordinal)) model.Status = PlaybackStatus();
             if (++ticks % 4 == 0) await RefreshDevicesAsync();
             var stats = engine.Statistics();
             foreach (var stat in stats)
             {
                 var speaker = stat.Speaker == 0 ? model.A : model.B;
                 speaker.Meter = stat.Peak * 100;
-                speaker.Telemetry = $"Buffer {stat.BufferedFrames / 48.0:0.#} ms · safety clamp {stat.LimitedSamples:N0} samples";
+                speaker.Telemetry = $"Buffer {stat.BufferedFrames / 48.0:0.#} ms · peak protection {stat.LimiterReductionDb:0.#} dB · clamp {stat.LimitedSamples:N0}";
             }
-            model.Diagnostic = $"Engine: {(engine.IsRunning ? "playing" : "stopped")}   Capture: {engine.CapturedFrames:N0} frames\n48,000 Hz · float stereo · shared-mode outputs · 80 ms requested output buffer\n" +
+            model.Diagnostic = $"Engine: {(engine.IsRunning ? "playing" : "stopped")}   Capture: {engine.CapturedFrames:N0} frames\nSource Windows volume: {engine.SourceVolume:P0} · muted: {engine.SourceMuted}\n48,000 Hz · float stereo · shared-mode outputs · 80 ms output buffer + 5 ms peak protection\n" +
                 string.Join("\n", stats.Select(s => $"Speaker {(s.Speaker == 0 ? "A" : "B")}: queue {s.BufferedFrames / 48.0:0.#} ms | missing {s.UnderrunFrames:N0} | dropped {s.OverrunFrames:N0} | clamped {s.LimitedSamples:N0}")) +
                 (lastError is null ? "" : "\nLast error: " + lastError);
             if (wanted && !engine.IsRunning && !model.Busy && DateTime.UtcNow >= nextRetry)
@@ -165,6 +167,10 @@ public partial class MainWindow : Window
         }
         finally { ticking = false; }
     }
+    private string PlaybackStatus() => engine.SourceMuted
+        ? "Playing · source is muted in Windows. Unmute it using Windows volume controls."
+        : engine.SourceVolume <= 0 ? "Playing · Windows source volume is at zero."
+        : "Playing · independent EQ, volume, delay, and routing are active";
     private void CreateTray()
     {
         tray = new Forms.NotifyIcon { Icon = System.Drawing.SystemIcons.Application, Text = "DualSync", Visible = true };
@@ -255,7 +261,7 @@ public partial class MainWindow : Window
     private async void Refresh_Click(object sender, RoutedEventArgs e) => await RefreshDevicesAsync();
     private void CopyDiagnostics_Click(object sender, RoutedEventArgs e)
     {
-        var report = new StringBuilder("DualSync 0.1.0-alpha.1\n").AppendLine(Environment.OSVersion.ToString()).AppendLine(model.Diagnostic);
+        var report = new StringBuilder("DualSync 0.1.0-alpha.2\n").AppendLine(Environment.OSVersion.ToString()).AppendLine(model.Diagnostic);
         foreach (var device in model.Devices) report.AppendLine(device.ToString() + " | " + device.Id);
         report.AppendLine("Profile:\n" + System.Text.Json.JsonSerializer.Serialize(model.Snapshot, SettingsStore.JsonOptions));
         Clipboard.SetText(report.ToString()); model.Status = "Diagnostic report copied. It includes device names, IDs, and audio settings.";

@@ -28,11 +28,11 @@ If you hear feedback or repeated audio, stop DualSync and check the source and a
 
 ## Windows volume mode
 
-The default **App volume** mode applies a software master gain to both outputs. It preserves individual speaker volume ratios.
+The default **Windows source volume** mode follows the source endpoint's Windows volume and mute, preserving individual speaker volume ratios. Legacy alpha 1 App volume profiles migrate to this mode while keeping speaker settings. **App volume** remains available for an independent software master and still respects source mute and zero volume.
 
-For Windows controls, stop playback, open Settings, and select **Windows source volume**. This explicitly opts the master slider into changing the source endpoint's Windows volume while the engine is running. Starting the engine reads the current endpoint volume; it does not restore a saved endpoint volume or unmute the endpoint.
+The app master changes the source endpoint's Windows volume only when you move the slider in Windows source volume mode while audio is running. Starting the engine reads the current endpoint volume; it does not restore a saved endpoint volume or unmute the endpoint.
 
-The Windows default playback device must be the selected source for keyboard volume keys and the main Windows volume slider to control that endpoint. Verify behavior using the procedure in [testing.md](testing.md). The checkbox for loopback volume chooses whether the source volume is already present in captured samples or must also be applied by DualSync. Do not assume that every virtual or physical endpoint behaves the same way.
+The Windows default playback device must be the selected source for keyboard volume keys and the main Windows volume slider to control that endpoint. Leave **Source already applies Windows volume** unchecked for a VB-Cable with native volume bypassed. Check it only when capture already includes source attenuation, to avoid applying volume twice. Do not assume every driver behaves the same way. Verify with [testing.md](testing.md).
 
 ## Background operation
 

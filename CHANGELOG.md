@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.1.0-alpha.2 — 2026-10-27
+
+- Removed the sum-of-boosts attenuation that could make EQ almost silent.
+- Added a stereo-linked limiter with 5 ms lookahead; quiet audio stays at unity gain.
+- Made Windows source volume the default, with software gain for sources such as VB-Cable that bypass native volume.
+- Made source mute and zero volume apply in every mode, with notification polling as a fallback.
+- Migrated alpha 1 app-only profiles while preserving speaker EQ, volumes, delay, and routing.
+- Added four regression tests, bringing the suite to 22 tests.
+
+Actual Windows-volume behavior on the owner's source still needs a retest. No driver, default playback device, or driver-control-panel setting is changed by this update.
+
 ## 0.1.0-alpha.1 — 2026-10-27
 
 Initial runnable alpha under hardware validation.

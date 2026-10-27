@@ -39,7 +39,7 @@ try
     var silent = args[0] == "--smoke";
     for (var cycle = 0; cycle < (silent ? 2 : 1); cycle++)
     {
-        await engine.StartAsync(new AudioProfile { SourceId = args[1], MasterVolume = silent ? 0 : 0.5, Speakers = [new() { DeviceId = args[2] }, new() { DeviceId = args[3] }] });
+        await engine.StartAsync(new AudioProfile { SourceId = args[1], MasterMode = MasterMode.AppOnly, MasterVolume = silent ? 0 : 0.5, Speakers = [new() { DeviceId = args[2] }, new() { DeviceId = args[3] }] });
         for (var i = 0; i < (silent ? 3 : 10); i++)
         {
             await Task.Delay(1000);

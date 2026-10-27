@@ -68,7 +68,7 @@ public sealed class SpeakerViewModel : Observable
     }
     public string Telemetry { get => telemetry; set => Set(ref telemetry, value); }
     public double Meter { get => meter; set => Set(ref meter, value); }
-    public string HeadroomText => $"Automatic headroom: {Snapshot.Bands.Sum(g => Math.Max(0, g)):0.#} dB when EQ is on";
+    public string HeadroomText => "Peak protection reduces gain only if the audio would overload. No fixed EQ volume cut.";
     private void BandsChanged() { if (loading) return; Preset = null; Change(nameof(Snapshot)); }
     private void Change([CallerMemberName] string? property = null)
     {

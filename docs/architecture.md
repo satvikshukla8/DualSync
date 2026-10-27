@@ -25,18 +25,18 @@ The source cannot also be an output, and an output cannot be selected twice. Thi
 1. Read stereo frames from the output's bounded buffer; fill missing frames with silence.
 2. Apply a smoothed channel matrix.
 3. Apply ten peaking biquads, with independent left/right filter state.
-4. Smooth gain, EQ bypass, and conservative headroom compensation.
-5. Apply a safety clamp and count samples reaching it.
+4. Smooth gain and EQ bypass, preserving normal-level audio without a fixed EQ volume cut.
+5. Apply a stereo-linked peak limiter with 5 ms lookahead, plus a final numerical safety clamp.
 6. Read the delay line at a configurable fractional-frame offset, crossfading delay changes.
 7. Return samples to the shared-mode player.
 
-The EQ uses the peaking-filter equations described in the [W3C Audio EQ Cookbook](https://www.w3.org/TR/audio-eq-cookbook/). Band centers run from 31.25 Hz to 16 kHz, with gain from −12 to +12 dB. Headroom equals the sum of positive band gains. This is deliberately conservative and can reduce loudness substantially when many bands are boosted. The graph displays the filter response before this compensation.
+The EQ uses the peaking-filter equations described in the [W3C Audio EQ Cookbook](https://www.w3.org/TR/audio-eq-cookbook/). Band centers run from 31.25 Hz to 16 kHz, with gain from −12 to +12 dB. Alpha 1's sum-of-positive-boosts compensation was removed after hardware testing showed excessive whole-signal attenuation. Alpha 2 leaves normal-level audio unchanged and limits actual peaks above 0.98 full scale. The graph displays the filter response before signal-dependent limiting.
 
-Bypass crossfades between the original signal and the already compensated EQ signal. Headroom releases slowly and remains conservative for the filter coefficients currently in use, preventing a gain surge when boosted bands are reset or bypassed.
+Bypass crossfades between the original and EQ signals. A monotonic peak queue tracks the limiter's lookahead window; a short linear attack and 100 ms release avoid unnecessary gain jumps. Stereo channels share one limiter gain. Both outputs receive the same fixed 5 ms processing delay in addition to their configured speaker delays.
 
 ## Windows master volume
 
-The application distinguishes its own software master gain from the selected source endpoint's Windows volume. Endpoint mode must mirror changes in both directions while retaining individual speaker gains.
+The application distinguishes its own software master gain from the selected source endpoint's Windows volume. Endpoint mode is now the default and mirrors changes in both directions while retaining individual speaker gains. Windows mute and zero endpoint volume silence both outputs in every mode, including App volume mode. Endpoint notifications are backed by a read-only poll on the monitoring timer.
 
 Loopback's relationship to endpoint volume needs verification on the actual source. Applying software master gain to samples that are already scaled would apply volume twice. A source-volume mode therefore needs an explicit setting for whether captured samples already include that volume. Keyboard volume keys control Windows' default playback endpoint; that endpoint must be the chosen source for the expected behavior.
 

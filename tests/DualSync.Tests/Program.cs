@@ -22,7 +22,7 @@ var tests = new (string Name, Action Run)[]
         Throws<ArgumentOutOfRangeException>(() => BiquadCoefficients.Peak(48000, 1000, double.NaN));
         Throws<ArgumentOutOfRangeException>(() => BiquadCoefficients.Peak(48000, 0, 0));
     }),
-    ("Measured sine response matches EQ coefficients and headroom", () =>
+    ("Measured sine response matches EQ without reducing unaffected audio", () =>
     {
         foreach (var gain in new[] { -12.0, 6, 12 })
         foreach (var frequency in new[] { 250.0, 1000, 4000 })
@@ -30,7 +30,7 @@ var tests = new (string Name, Action Run)[]
             var bands = new double[10]; bands[5] = gain;
             var processor = new SpeakerProcessor(48000, new() { Volume = 1, Bands = bands });
             var signal = Tone(frequency, 2, 0.05); processor.Process(signal, 1);
-            var expected = BiquadCoefficients.Peak(48000, 1000, gain).Magnitude(48000, frequency) * Numbers.DbToGain(-Math.Max(0, gain));
+            var expected = BiquadCoefficients.Peak(48000, 1000, gain).Magnitude(48000, frequency);
             Near(Rms(signal.AsSpan(96000)) / (0.05 / Math.Sqrt(2)), expected, 0.003);
             Check(processor.LimitedSamples == 0, "Normal test signal clipped");
         }
@@ -65,7 +65,7 @@ var tests = new (string Name, Action Run)[]
             processor.Process(new float[48000], 1);
             var signal = new float[60000]; signal[0] = signal[1] = 0.5f;
             processor.Process(signal, 1);
-            var frame = (int)(delay * 48); var frac = delay * 48 - frame;
+            var frame = (int)(delay * 48) + processor.LimiterLatencyFrames; var frac = delay * 48 - (int)(delay * 48);
             Near(signal[frame * 2], 0.5 * (1 - frac), 0.00001);
             if (frac != 0) Near(signal[(frame + 1) * 2], 0.5 * frac, 0.00001);
             Near(signal.Sum(x => (double)x), 1, 0.0001);
@@ -175,7 +175,7 @@ var tests = new (string Name, Action Run)[]
             Near(Rms(y.AsSpan(48000)) / Rms(x.AsSpan(48000)), 3, 0.0001);
         }
     }),
-    ("EQ bypass and boost reset avoid transient gain overshoots", () =>
+    ("EQ bypass and boost reset remain protected and recover normal volume", () =>
     {
         foreach (var bypass in new[] { true, false })
         {
@@ -184,10 +184,56 @@ var tests = new (string Name, Action Run)[]
             var processor = new SpeakerProcessor(48000, settings);
             processor.Process(Tone(1000, 1, 0.8), 1);
             processor.Update(bypass ? settings with { EqEnabled = false } : settings with { Bands = new double[10] });
-            var transition = Tone(1000, 0.5, 0.8); processor.Process(transition, 1);
-            Check(transition.Max(x => Math.Abs(x)) < 0.84, "EQ transition exceeded the unprocessed signal level by more than 5%");
+            var transition = Tone(1000, 1, 0.8); processor.Process(transition, 1);
+            Check(transition.Max(x => Math.Abs(x)) <= 0.981, "EQ transition exceeded the peak ceiling");
+            Near(Rms(transition.AsSpan(72000)), 0.8 / Math.Sqrt(2), 0.002);
             Check(processor.LimitedSamples == 0, "EQ transition reached the safety clamp");
         }
+    }),
+    ("Boosting multiple EQ bands does not stack whole-signal attenuation", () =>
+    {
+        var bands = Enumerable.Repeat(6.0, 10).ToArray();
+        var processor = new SpeakerProcessor(48000, new() { Volume = 1, Bands = bands });
+        var signal = Tone(1000, 2, 0.01); processor.Process(signal, 1);
+        var expected = Presets.Frequencies.Select(f => BiquadCoefficients.Peak(48000, f, 6).Magnitude(48000, 1000)).Aggregate(1.0, (a, b) => a * b);
+        Near(Rms(signal.AsSpan(96000)) / (0.01 / Math.Sqrt(2)), expected, 0.01);
+        Check(processor.LimiterReductionDb < 0.01, "Ordinary quiet audio was attenuated");
+    }),
+    ("Limiter is transparent below its ceiling and links stereo peaks", () =>
+    {
+        var limiter = new PeakLimiter(48000);
+        for (var i = 0; i < 1000; i++)
+        {
+            var output = limiter.Process(0.3, -0.15);
+            if (i >= limiter.LatencyFrames) { Near(output.Left, 0.3, 0.000001); Near(output.Right, -0.15, 0.000001); }
+        }
+        for (var i = 0; i < 1000; i++)
+        {
+            var output = limiter.Process(4, -2);
+            Check(Math.Abs(output.Left) <= 0.981 && Math.Abs(output.Right) <= 0.981, "Limiter exceeded ceiling");
+            if (Math.Abs(output.Left) > 0.001) Near(output.Right / output.Left, -0.5, 0.00001);
+        }
+    }),
+    ("Windows mute and zero source volume silence every master mode", () =>
+    {
+        foreach (var mode in Enum.GetValues<MasterMode>())
+        foreach (var included in new[] { true, false })
+        {
+            var profile = new AudioProfile { MasterMode = mode, MasterVolume = 0.7, LoopbackIncludesEndpointVolume = included };
+            Near(MasterGainPolicy.Calculate(profile, 0.7, true), 0, 0);
+            Near(MasterGainPolicy.Calculate(profile, 0, false), 0, 0);
+            var expected = mode == MasterMode.AppOnly ? 0.7 : included ? 1 : 0.25;
+            Near(MasterGainPolicy.Calculate(profile, 0.25, false), expected, 0);
+        }
+    }),
+    ("Legacy default profiles migrate to Windows volume without losing speaker settings", () =>
+    {
+        var directory = Path.Combine(Environment.CurrentDirectory, "artifacts", "test-data", Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(directory); var path = Path.Combine(directory, "settings.json");
+        File.WriteAllText(path, JsonSerializer.Serialize(new AppSettings { SchemaVersion = 1, Current = new() { MasterMode = MasterMode.AppOnly, Speakers = [new() { Volume = 0.23, DelayMs = 42 }, new()] } }, SettingsStore.JsonOptions));
+        var migrated = new SettingsStore(path).Load();
+        Check(migrated.SchemaVersion == 2 && migrated.Current.MasterMode == MasterMode.SourceEndpoint && !migrated.Current.LoopbackIncludesEndpointVolume, "Windows volume mode not migrated");
+        Near(migrated.Current.Speakers[0].Volume, 0.23, 0); Near(migrated.Current.Speakers[0].DelayMs, 42, 0);
     }),
     ("Processing avoids managed allocations after warmup", () =>
     {

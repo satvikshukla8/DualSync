@@ -16,11 +16,11 @@ Stop DualSync. Check whether Voicemeeter or another app is also forwarding the s
 
 ## Windows volume controls do not change both speakers
 
-App volume mode is software-only. Windows source volume mode needs the selected source to match Windows' default playback endpoint for normal volume keys. Its loopback-volume checkbox must match the source driver's behavior. Follow the volume test in [testing.md](testing.md).
+Use Windows source volume mode, now the default. The selected source must match Windows' default playback endpoint for normal volume keys. For a VB-Cable whose native volume is bypassed, leave “Source already applies Windows volume” unchecked so DualSync applies the source scalar. Windows source mute is honored in both volume modes. Follow the volume test in [testing.md](testing.md).
 
 ## EQ presets sound quiet
 
-Automatic headroom reduces gain by the sum of positive EQ boosts. Many simultaneous boosts can cause a large reduction. Prefer cutting unwanted bands and making modest boosts. The graph shows EQ shape before headroom. Persistent safety-clamp counts mean settings or source material are reaching the output limit.
+Use alpha 2 or newer. Alpha 1 attenuated the entire signal by the sum of boosted bands, which could nearly silence a speaker. Alpha 2 removes that fixed reduction. Peak protection now reduces gain only when the processed audio needs limiting; live reduction is displayed on the dashboard. Large boosts can still cause audible compression, so use moderate adjustments.
 
 ## Clicks, gaps, or drifting alignment
 

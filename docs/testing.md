@@ -4,12 +4,12 @@
 
 Run `./scripts/build.ps1` to restore locked dependencies, build all projects, and execute the test program. The test runner exits with a nonzero code on failure; `dotnet test` is not the entry point for this dependency-free test harness.
 
-The initial 18 tests cover:
+The 22 tests cover:
 
 - Biquad stability across supported band centers, sample rates, and gain limits.
-- Analytical and measured sine-wave frequency response, including headroom.
+- Analytical and measured sine-wave frequency response, without fixed attenuation.
 - Flat EQ, bypass, master gain, mute ramps, and speaker gain ratios.
-- Boosted-EQ bypass and reset transitions without transient gain overshoots.
+- Boosted-EQ bypass and reset transitions within the limiter ceiling.
 - All channel-routing matrices.
 - Impulse placement at zero, integer, fractional, and maximum delay.
 - Rapid parameter changes and finite, bounded output.
@@ -36,7 +36,7 @@ dotnet run --project tools/DualSync.Diagnostics -- --smoke SOURCE_ID OUTPUT_A_ID
 ## Recorded development checks — 2026-10-27
 
 - Release build: all five projects compiled with zero warnings and errors.
-- Core tests: 18/18 passed.
+- Core tests: 22/22 passed for alpha 2.
 - Fresh GitHub Windows build: compilation, tests, portable packaging, and private artifact upload passed.
 - Device discovery: Windows render endpoints enumerated successfully, including two Bluetooth endpoints and existing virtual endpoints.
 - Silent WASAPI smoke test: two start/stop cycles passed using a monitor endpoint and an existing virtual output. Each cycle captured approximately three seconds of source frames, with zero output peaks, overruns, and safety clamps. Startup underruns were recorded.
@@ -67,15 +67,15 @@ Record the source and speaker names, Windows build, profile, and test duration. 
 
 ## Windows volume test
 
-Start with the default App volume mode and a flat EQ. Confirm both speaker volume ratios remain constant while changing the app master.
+Use a flat EQ and start at moderate volume. Windows source volume is the alpha 2 default. Confirm both speaker volume ratios remain constant while changing the app master.
 
 For Windows source mode:
 
 1. Record the source's current Windows volume and mute state.
-2. Stop audio and select Windows source volume. Keep “Loopback already includes…” checked initially.
+2. Stop audio and select Windows source volume. Leave “Source already applies Windows volume” unchecked for your VB-Cable.
 3. Start audio and play a steady signal. Change Windows source volume between 25% and 75%.
 4. Confirm the app master mirrors Windows and both speakers follow the level change.
-5. If the slider moves but speaker level does not, uncheck the loopback-volume checkbox so DualSync applies the source scalar.
+5. If the slider moves but speaker level does not, uncheck the source-volume checkbox so DualSync applies the source scalar.
 6. If the volume change becomes disproportionately strong, the capture may already be scaled; recheck the checkbox and test again.
 7. Test mute, keyboard volume keys, and app-master changes. Verify that keyboard controls target the chosen default source.
 8. Return the endpoint to its previously recorded volume and mute state when done.

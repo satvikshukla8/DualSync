@@ -33,9 +33,9 @@ public sealed record AudioProfile
     public string Name { get; init; } = "My speakers";
     public string? SourceId { get; init; }
     public double MasterVolume { get; init; } = 0.7;
-    public MasterMode MasterMode { get; init; }
+    public MasterMode MasterMode { get; init; } = MasterMode.SourceEndpoint;
     // True only after the user has verified that source volume already scales loopback samples.
-    public bool LoopbackIncludesEndpointVolume { get; init; } = true;
+    public bool LoopbackIncludesEndpointVolume { get; init; }
     public SpeakerSettings[] Speakers { get; init; } = [new(), new()];
 
     public AudioProfile Sanitize() => this with
@@ -49,7 +49,7 @@ public sealed record AudioProfile
 
 public sealed record AppSettings
 {
-    public int SchemaVersion { get; init; } = 1;
+    public int SchemaVersion { get; init; } = 2;
     public AudioProfile Current { get; init; } = new();
     public List<AudioProfile> Profiles { get; init; } = [];
     public bool MinimizeToTray { get; init; }
@@ -94,7 +94,19 @@ public sealed class SettingsStore(string path)
         try
         {
             var value = JsonSerializer.Deserialize<AppSettings>(File.ReadAllText(path), JsonOptions) ?? throw new JsonException("Empty settings");
-            if (value.SchemaVersion != 1) throw new JsonException("Unsupported settings version");
+            if (value.SchemaVersion == 1)
+            {
+                // Alpha 1's default bypassed Windows volume. Upgrade its app-only profiles
+                // without modifying any Windows endpoint settings or speaker parameters.
+                static AudioProfile Upgrade(AudioProfile? p)
+                {
+                    p ??= new();
+                    return p.MasterMode == MasterMode.AppOnly
+                        ? p with { MasterMode = MasterMode.SourceEndpoint, LoopbackIncludesEndpointVolume = false } : p;
+                }
+                value = value with { SchemaVersion = 2, Current = Upgrade(value.Current), Profiles = (value.Profiles ?? []).Select(Upgrade).ToList() };
+            }
+            if (value.SchemaVersion != 2) throw new JsonException("Unsupported settings version");
             return value.Sanitize();
         }
         catch (Exception ex) when (ex is JsonException or IOException or UnauthorizedAccessException)

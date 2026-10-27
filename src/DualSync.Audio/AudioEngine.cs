@@ -5,7 +5,7 @@ using NAudio.Wave;
 
 namespace DualSync.Audio;
 
-public sealed record OutputStatistics(int Speaker, int BufferedFrames, long UnderrunFrames, long OverrunFrames, long LimitedSamples, float Peak, double HeadroomDb);
+public sealed record OutputStatistics(int Speaker, int BufferedFrames, long UnderrunFrames, long OverrunFrames, long LimitedSamples, float Peak, double LimiterReductionDb);
 
 public sealed class AudioEngine : IAsyncDisposable
 {
@@ -20,6 +20,7 @@ public sealed class AudioEngine : IAsyncDisposable
     private long capturedFrames;
     public bool IsRunning => Volatile.Read(ref running) == 1;
     public double SourceVolume => Volatile.Read(ref sourceVolume);
+    public bool SourceMuted => Volatile.Read(ref sourceMuted) != 0;
     public long CapturedFrames => Interlocked.Read(ref capturedFrames);
     public event Action<string>? Faulted;
     public event Action<double>? SourceVolumeChanged;
@@ -88,9 +89,7 @@ public sealed class AudioEngine : IAsyncDisposable
         get
         {
             var current = Volatile.Read(ref profile);
-            if (current.MasterMode == MasterMode.AppOnly) return current.MasterVolume;
-            if (Volatile.Read(ref sourceMuted) != 0) return 0;
-            return current.LoopbackIncludesEndpointVolume ? 1 : SourceVolume;
+            return MasterGainPolicy.Calculate(current, SourceVolume, SourceMuted);
         }
     }
     public void Update(AudioProfile configuration)
@@ -108,7 +107,19 @@ public sealed class AudioEngine : IAsyncDisposable
     }
     public OutputStatistics[] Statistics() => Volatile.Read(ref outputs).Select((o, i) =>
         new OutputStatistics(i, o.Buffer.AvailableFrames, o.Buffer.MissingFrames, o.Buffer.DroppedFrames,
-            o.Processor.LimitedSamples, o.Processor.Peak, o.Processor.HeadroomDb)).ToArray();
+            o.Processor.LimitedSamples, o.Processor.Peak, o.Processor.LimiterReductionDb)).ToArray();
+    public void RefreshSourceVolume()
+    {
+        if (source is null || !IsRunning) return;
+        try
+        {
+            var volume = source.AudioEndpointVolume.MasterVolumeLevelScalar;
+            Volatile.Write(ref sourceMuted, source.AudioEndpointVolume.Mute ? 1 : 0);
+            if (Math.Abs(volume - SourceVolume) > 0.0001)
+            { Volatile.Write(ref sourceVolume, volume); SourceVolumeChanged?.Invoke(volume); }
+        }
+        catch (Exception ex) { ReportFault(ex); }
+    }
     private void ReportFault(Exception exception)
     {
         if (Volatile.Read(ref stopping) == 0 && Interlocked.Exchange(ref running, 0) != 0)

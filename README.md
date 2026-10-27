@@ -4,12 +4,12 @@ A free, open-source Windows 11 desktop app for playing system audio through two 
 
 DualSync is being built for everyday setups such as two Bluetooth speakers with different sound characteristics and playback delays. The interface focuses on independent equalization, simple volume controls, and speaker timing.
 
-**Status: runnable alpha, under hardware validation.** The desktop app and audio engine build successfully, 18 automated tests pass, and a silent two-output WASAPI test passed two start/stop cycles. The portable app launches and its interface has been inspected. Audible Bluetooth playback, source-volume behavior, and long-session reliability still require testing. There is no published GitHub release.
+**Status: runnable alpha, under hardware validation.** The desktop app and audio engine build successfully, 22 automated tests pass, and a silent two-output WASAPI test passed two start/stop cycles. The portable app launches and its interface has been inspected. Audible Bluetooth playback, source-volume behavior, and long-session reliability still require testing. There is no published GitHub release.
 
 ## Included in the alpha
 
 - Two independently selected Windows playback devices.
-- A separate 10-band equalizer for each speaker, with presets and automatic headroom.
+- A separate 10-band equalizer for each speaker, with presets and signal-dependent peak protection.
 - Master volume, individual speaker volume, and mute.
 - Independent playback delay from 0–500 ms.
 - Stereo, left, right, mono, and custom channel mixing.
