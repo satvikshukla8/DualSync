@@ -1,0 +1,13 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/DualSync.App/DualSync.App.csproj" />
+    <Project Path="src/DualSync.Audio/DualSync.Audio.csproj" />
+    <Project Path="src/DualSync.Core/DualSync.Core.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/DualSync.Tests/DualSync.Tests.csproj" />
+  </Folder>
+  <Folder Name="/tools/">
+    <Project Path="tools/DualSync.Diagnostics/DualSync.Diagnostics.csproj" />
+  </Folder>
+</Solution>

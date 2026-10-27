@@ -1,0 +1,10 @@
+**/bin/
+**/obj/
+.vs/
+.tools/
+artifacts/
+*.user
+*.log
+dotnet-releases.json
+.nuget/
+TestResults/
