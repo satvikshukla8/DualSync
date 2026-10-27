@@ -4,9 +4,9 @@ A free, open-source Windows 11 desktop app for playing system audio through two 
 
 DualSync is being built for everyday setups such as two Bluetooth speakers with different sound characteristics and playback delays. The interface focuses on independent equalization, simple volume controls, and speaker timing.
 
-**Status: early development.** This first repository checkpoint contains the project structure, the core DSP and settings implementation, a compiling WASAPI audio library, and the desktop interface under construction. The full desktop application has not yet been built or tested on physical Bluetooth speakers. There is no release download yet.
+**Status: runnable alpha, under hardware validation.** The desktop app and audio engine build successfully, 17 automated tests pass, and a silent two-output WASAPI test passed two start/stop cycles. The portable app launches and its interface has been inspected. Audible Bluetooth playback, source-volume behavior, and long-session reliability still require testing. There is no published GitHub release.
 
-## Planned capabilities
+## Included in the alpha
 
 - Two independently selected Windows playback devices.
 - A separate 10-band equalizer for each speaker, with presets and automatic headroom.
@@ -14,7 +14,7 @@ DualSync is being built for everyday setups such as two Bluetooth speakers with 
 - Independent playback delay from 0–500 ms.
 - Stereo, left, right, mono, and custom channel mixing.
 - Saved profiles, system tray controls, and device reconnection handling.
-- Windows volume integration, with endpoint behavior verified before claiming support.
+- Optional Windows source-volume control, with a device-specific verification procedure.
 
 Independent Bluetooth devices have their own clocks and buffering. Static delay can reduce a steady timing difference; sample-accurate wireless synchronization is not promised.
 
@@ -31,9 +31,12 @@ DualSync/
 ├── tools/
 │   └── DualSync.Diagnostics/   # Windows endpoint and engine diagnostics
 ├── docs/
-│   └── architecture.md         # Audio pipeline, module boundaries, open decisions
-├── scripts/                   # Build and packaging scripts (being added)
-├── .github/workflows/          # Windows CI (being added)
+│   ├── architecture.md         # Audio pipeline, module boundaries, open decisions
+│   ├── installation.md         # Setup, volume mode, data, removal
+│   ├── testing.md              # Automated evidence and hardware procedures
+│   └── troubleshooting.md      # Routing, devices, volume, and diagnostics
+├── scripts/build.ps1           # Locked restore, build, tests, portable packaging
+├── .github/workflows/          # Windows build and private workflow artifacts
 ├── DualSync.slnx
 ├── Directory.Build.props
 └── global.json
@@ -68,10 +71,13 @@ Requirements: Windows 11 and the .NET SDK specified in `global.json`.
 
 ```powershell
 dotnet restore DualSync.slnx --locked-mode
-dotnet build src/DualSync.Audio -c Release --no-restore
+dotnet build DualSync.slnx -c Release --no-restore
+dotnet run --project tests/DualSync.Tests -c Release --no-build
 ```
 
-The audio library compiles at this checkpoint. Desktop startup, automated tests, packaging, and CI are still being connected; building the entire solution is not yet a supported verification step.
+Or run `./scripts/build.ps1 -Package` to perform the checks and create a self-contained Windows x64 portable ZIP under `artifacts`. Extract the whole ZIP and run `DualSync.exe`; no separate .NET runtime is required. The CI workflow uses the same script and uploads a workflow artifact without publishing a release.
+
+Read [installation](docs/installation.md) before choosing a source, and use the focused [hardware test checklist](docs/testing.md). Another application holding a Bluetooth endpoint in exclusive mode must release it before DualSync can use it.
 
 ## Roadmap
 
@@ -85,4 +91,4 @@ The audio library compiles at this checkpoint. Desktop startup, automated tests,
 
 ## Licensing
 
-MIT is the intended license for DualSync's original code. The license file and dependency notices will be added after checking the resolved dependency licenses. No third-party driver is included in this repository.
+DualSync's original code is licensed under [MIT](LICENSE). See [third-party notices](THIRD_PARTY_NOTICES.md) for the resolved dependencies and bundled runtime licenses. No third-party driver is included in this repository.

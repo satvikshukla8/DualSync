@@ -65,7 +65,7 @@ Startup registration is optional. Driver installation, default-device changes, p
 
 ## Validation still required
 
-- Complete the desktop lifecycle and test suite.
+- Continue testing desktop lifecycle and device recovery on physical hardware.
 - Confirm both Bluetooth speakers receive audio.
 - Listen for artifacts during parameter changes.
 - Verify source volume, mute, keyboard volume, and per-speaker gain behavior.
