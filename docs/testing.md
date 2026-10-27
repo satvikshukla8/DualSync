@@ -4,11 +4,12 @@
 
 Run `./scripts/build.ps1` to restore locked dependencies, build all projects, and execute the test program. The test runner exits with a nonzero code on failure; `dotnet test` is not the entry point for this dependency-free test harness.
 
-The initial 17 tests cover:
+The initial 18 tests cover:
 
 - Biquad stability across supported band centers, sample rates, and gain limits.
 - Analytical and measured sine-wave frequency response, including headroom.
 - Flat EQ, bypass, master gain, mute ramps, and speaker gain ratios.
+- Boosted-EQ bypass and reset transitions without transient gain overshoots.
 - All channel-routing matrices.
 - Impulse placement at zero, integer, fractional, and maximum delay.
 - Rapid parameter changes and finite, bounded output.
@@ -35,12 +36,12 @@ dotnet run --project tools/DualSync.Diagnostics -- --smoke SOURCE_ID OUTPUT_A_ID
 ## Recorded development checks — 2026-10-27
 
 - Release build: all five projects compiled with zero warnings and errors.
-- Core tests: 17/17 passed.
+- Core tests: 18/18 passed.
 - Fresh GitHub Windows build: compilation, tests, portable packaging, and private artifact upload passed.
 - Device discovery: Windows render endpoints enumerated successfully, including two Bluetooth endpoints and existing virtual endpoints.
 - Silent WASAPI smoke test: two start/stop cycles passed using a monitor endpoint and an existing virtual output. Each cycle captured approximately three seconds of source frames, with zero output peaks, overruns, and safety clamps. Startup underruns were recorded.
 - Bluetooth stream initialization: an attempted silent test was blocked because an output was already held in exclusive mode by another application. No application was stopped or reconfigured to bypass that condition.
-- Offline two-speaker DSP: 60 seconds processed in approximately 1.19 seconds wall time and 1.00 CPU seconds on the development PC. This is not a whole-app CPU or latency measurement.
+- Offline two-speaker DSP: 60 seconds processed in approximately 1.12 seconds wall time and 1.14 CPU seconds on the development PC. This is not a whole-app CPU or latency measurement.
 - Desktop: the portable executable launched. Dashboard and EQ layouts were visually inspected; background, text-inheritance, and close-event issues were repaired. Moving Speaker A's EQ updated its graph and persisted its gain while Speaker B stayed unchanged; Reset EQ restored a flat response. The packaged app closed successfully after the shutdown fix.
 
 No audible Bluetooth playback, acoustic timing, source-volume behavior, or one-hour reliability result has been claimed.

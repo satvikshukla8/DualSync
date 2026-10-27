@@ -175,6 +175,20 @@ var tests = new (string Name, Action Run)[]
             Near(Rms(y.AsSpan(48000)) / Rms(x.AsSpan(48000)), 3, 0.0001);
         }
     }),
+    ("EQ bypass and boost reset avoid transient gain overshoots", () =>
+    {
+        foreach (var bypass in new[] { true, false })
+        {
+            var bands = new double[10]; bands[5] = 12;
+            var settings = new SpeakerSettings { Volume = 1, Bands = bands };
+            var processor = new SpeakerProcessor(48000, settings);
+            processor.Process(Tone(1000, 1, 0.8), 1);
+            processor.Update(bypass ? settings with { EqEnabled = false } : settings with { Bands = new double[10] });
+            var transition = Tone(1000, 0.5, 0.8); processor.Process(transition, 1);
+            Check(transition.Max(x => Math.Abs(x)) < 0.84, "EQ transition exceeded the unprocessed signal level by more than 5%");
+            Check(processor.LimitedSamples == 0, "EQ transition reached the safety clamp");
+        }
+    }),
     ("Processing avoids managed allocations after warmup", () =>
     {
         var processor = new SpeakerProcessor(48000, new()); var signal = new float[960];

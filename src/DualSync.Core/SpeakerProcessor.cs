@@ -31,17 +31,19 @@ public sealed class SpeakerProcessor
         var targetGain = s.Muted ? 0 : s.Volume * Math.Clamp(masterGain, 0, 1);
         double positiveGain = 0;
         for (var i = 0; i < s.Bands.Length; i++) positiveGain += Math.Max(0, s.Bands[i]);
-        var targetHeadroom = s.EqEnabled ? Numbers.DbToGain(-positiveGain) : 1;
+        var targetHeadroom = Numbers.DbToGain(-positiveGain);
         var wantedDelay = s.DelayMs * rate / 1000;
         if (delayFade >= 1 && Math.Abs(wantedDelay - currentDelay) > 0.01)
         { oldDelay = currentDelay; currentDelay = wantedDelay; delayFade = 0; }
         var (tll, tlr, trl, trr) = Matrix(s);
         var smooth = 1 - Math.Exp(-1.0 / (rate * 0.015));
+        var headroomAttack = 1 - Math.Exp(-1.0 / (rate * 0.010));
+        var headroomRelease = 1 - Math.Exp(-1.0 / (rate * 0.060));
         var blockPeak = 0f;
         for (var p = 0; p + 1 < stereo.Length; p += 2)
         {
             gain += (targetGain - gain) * smooth;
-            headroom += (targetHeadroom - headroom) * smooth;
+            headroom += (targetHeadroom - headroom) * (targetHeadroom < headroom ? headroomAttack : headroomRelease);
             eqWet += ((s.EqEnabled ? 1 : 0) - eqWet) * smooth;
             ll += (tll - ll) * smooth; lr += (tlr - lr) * smooth;
             rl += (trl - rl) * smooth; rr += (trr - rr) * smooth;
@@ -53,6 +55,11 @@ public sealed class SpeakerProcessor
                     bandGains[b] += (s.Bands[b] - bandGains[b]) * bandSmooth;
                     coefficients[b] = BiquadCoefficients.Peak(rate, Math.Min(Presets.Frequencies[b], rate * 0.45), bandGains[b]);
                 }
+                // Keep compensation at least as conservative as the filters currently in use,
+                // including while boosted bands are returning to zero.
+                double activeBoost = 0;
+                for (var b = 0; b < 10; b++) activeBoost += Math.Max(0, bandGains[b]);
+                headroom = Math.Min(headroom, Numbers.DbToGain(-activeBoost));
             }
             var inputL = float.IsFinite(stereo[p]) ? stereo[p] : 0;
             var inputR = float.IsFinite(stereo[p + 1]) ? stereo[p + 1] : 0;
@@ -61,8 +68,8 @@ public sealed class SpeakerProcessor
             var l = dryL; var r = dryR;
             for (var b = 0; b < 10; b++)
             { l = left[b].Process(l, coefficients[b]); r = right[b].Process(r, coefficients[b]); }
-            l = (dryL + (l - dryL) * eqWet) * gain * headroom;
-            r = (dryR + (r - dryR) * eqWet) * gain * headroom;
+            l = (dryL * (1 - eqWet) + l * eqWet * headroom) * gain;
+            r = (dryR * (1 - eqWet) + r * eqWet * headroom) * gain;
             delay[position * 2] = Limit(l); delay[position * 2 + 1] = Limit(r);
             var blend = Math.Min(1, delayFade);
             stereo[p] = (float)(Tap(oldDelay, 0) * (1 - blend) + Tap(currentDelay, 0) * blend);

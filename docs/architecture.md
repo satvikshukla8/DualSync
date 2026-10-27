@@ -32,6 +32,8 @@ The source cannot also be an output, and an output cannot be selected twice. Thi
 
 The EQ uses the peaking-filter equations described in the [W3C Audio EQ Cookbook](https://www.w3.org/TR/audio-eq-cookbook/). Band centers run from 31.25 Hz to 16 kHz, with gain from −12 to +12 dB. Headroom equals the sum of positive band gains. This is deliberately conservative and can reduce loudness substantially when many bands are boosted. The graph displays the filter response before this compensation.
 
+Bypass crossfades between the original signal and the already compensated EQ signal. Headroom releases slowly and remains conservative for the filter coefficients currently in use, preventing a gain surge when boosted bands are reset or bypassed.
+
 ## Windows master volume
 
 The application distinguishes its own software master gain from the selected source endpoint's Windows volume. Endpoint mode must mirror changes in both directions while retaining individual speaker gains.
