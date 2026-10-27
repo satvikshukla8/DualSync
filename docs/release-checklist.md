@@ -2,9 +2,9 @@
 
 ## Build and packaging
 
-- [ ] Windows CI succeeds from a fresh checkout.
-- [ ] Portable executable launches without an installed .NET runtime.
-- [ ] Package includes the app license, dependency notices, runtime notices, and setup documentation.
+- [x] Windows CI succeeds from a fresh checkout.
+- [x] Self-contained portable executable launches using its bundled runtime.
+- [x] Package includes the app license, dependency notices, runtime notices, and setup documentation.
 - [ ] Version, artifact name, changelog, and checksum agree.
 - [ ] Review signing options and document the actual signing status.
 

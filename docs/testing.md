@@ -36,11 +36,12 @@ dotnet run --project tools/DualSync.Diagnostics -- --smoke SOURCE_ID OUTPUT_A_ID
 
 - Release build: all five projects compiled with zero warnings and errors.
 - Core tests: 17/17 passed.
+- Fresh GitHub Windows build: compilation, tests, portable packaging, and private artifact upload passed.
 - Device discovery: Windows render endpoints enumerated successfully, including two Bluetooth endpoints and existing virtual endpoints.
 - Silent WASAPI smoke test: two start/stop cycles passed using a monitor endpoint and an existing virtual output. Each cycle captured approximately three seconds of source frames, with zero output peaks, overruns, and safety clamps. Startup underruns were recorded.
 - Bluetooth stream initialization: an attempted silent test was blocked because an output was already held in exclusive mode by another application. No application was stopped or reconfigured to bypass that condition.
 - Offline two-speaker DSP: 60 seconds processed in approximately 1.19 seconds wall time and 1.00 CPU seconds on the development PC. This is not a whole-app CPU or latency measurement.
-- Desktop: the portable executable launched. Dashboard and EQ layouts were visually inspected; a background-style issue and a close-event error were found and repaired. The packaged app closed successfully after the shutdown fix.
+- Desktop: the portable executable launched. Dashboard and EQ layouts were visually inspected; background, text-inheritance, and close-event issues were repaired. Moving Speaker A's EQ updated its graph and persisted its gain while Speaker B stayed unchanged; Reset EQ restored a flat response. The packaged app closed successfully after the shutdown fix.
 
 No audible Bluetooth playback, acoustic timing, source-volume behavior, or one-hour reliability result has been claimed.
 
