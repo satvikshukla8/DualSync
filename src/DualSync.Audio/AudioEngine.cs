@@ -44,8 +44,9 @@ public sealed class AudioEngine : IAsyncDisposable
                 for (var i = 0; i < clean.Speakers.Length; i++)
                 {
                     var device = enumerator.GetDevice(clean.Speakers[i].DeviceId!);
+                    var name = device.FriendlyName;
                     try { created.Add(new Output(this, device, clean.Speakers[i])); }
-                    catch { device.Dispose(); throw; }
+                    catch (Exception ex) { device.Dispose(); throw new InvalidOperationException($"Could not open Speaker {(i == 0 ? "A" : "B")} ({name}). {ex.Message}", ex); }
                 }
                 Volatile.Write(ref outputs, created.ToArray());
                 recorder = new WasapiRecorderBuilder().WithDevice(source).WithLoopbackCapture()
@@ -122,20 +123,25 @@ public sealed class AudioEngine : IAsyncDisposable
     private async Task StopInternalAsync()
     {
         Volatile.Write(ref stopping, 1); Volatile.Write(ref running, 0);
+        List<Exception> errors = [];
         var capture = recorder; recorder = null;
         if (capture is not null)
         {
             capture.DataAvailable -= OnData;
-            await capture.DisposeAsync();
+            try { await capture.DisposeAsync(); } catch (Exception ex) { errors.Add(ex); }
         }
         var oldOutputs = Interlocked.Exchange(ref outputs, []);
-        foreach (var output in oldOutputs) await output.DisposeAsync();
+        foreach (var output in oldOutputs)
+        { try { await output.DisposeAsync(); } catch (Exception ex) { errors.Add(ex); } }
         if (source is not null)
         {
-            source.AudioEndpointVolume.OnVolumeNotification -= OnSourceVolume;
-            source.Dispose(); source = null;
+            try { source.AudioEndpointVolume.OnVolumeNotification -= OnSourceVolume; }
+            catch (Exception ex) { errors.Add(ex); }
+            try { source.Dispose(); } catch (Exception ex) { errors.Add(ex); }
+            source = null;
         }
         Volatile.Write(ref stopping, 0);
+        if (errors.Count != 0) throw new AggregateException("Some audio resources reported errors while stopping.", errors);
     }
     public async ValueTask DisposeAsync() { await StopAsync(); lifecycle.Dispose(); }
 

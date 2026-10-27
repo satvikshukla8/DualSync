@@ -29,7 +29,9 @@ public sealed class SpeakerProcessor
     {
         var s = Volatile.Read(ref target);
         var targetGain = s.Muted ? 0 : s.Volume * Math.Clamp(masterGain, 0, 1);
-        var targetHeadroom = s.EqEnabled ? Numbers.DbToGain(-s.Bands.Sum(v => Math.Max(0, v))) : 1;
+        double positiveGain = 0;
+        for (var i = 0; i < s.Bands.Length; i++) positiveGain += Math.Max(0, s.Bands[i]);
+        var targetHeadroom = s.EqEnabled ? Numbers.DbToGain(-positiveGain) : 1;
         var wantedDelay = s.DelayMs * rate / 1000;
         if (delayFade >= 1 && Math.Abs(wantedDelay - currentDelay) > 0.01)
         { oldDelay = currentDelay; currentDelay = wantedDelay; delayFade = 0; }

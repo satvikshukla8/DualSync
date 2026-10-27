@@ -1,4 +1,4 @@
-<Window x:Class="DualSync.App.MainWindow" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:local="clr-namespace:DualSync.App" Title="DualSync" Width="1160" Height="850" MinWidth="860" MinHeight="620" WindowStartupLocation="CenterScreen">
+<Window x:Class="DualSync.App.MainWindow" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:local="clr-namespace:DualSync.App" Title="DualSync" Width="1160" Height="850" MinWidth="860" MinHeight="620" WindowStartupLocation="CenterScreen" Background="{StaticResource BackgroundBrush}" Foreground="{StaticResource TextBrush}" FontFamily="Segoe UI" FontSize="14">
   <Window.Resources>
     <DataTemplate x:Key="SpeakerCard">
       <Border Style="{StaticResource Card}"><StackPanel>

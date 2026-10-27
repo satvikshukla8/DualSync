@@ -12,7 +12,7 @@ public partial class App : System.Windows.Application
         if (!created) { MessageBox.Show("DualSync is already running. Open it from the system tray.", "DualSync"); Shutdown(); return; }
         DispatcherUnhandledException += (_, args) =>
         {
-            try { Directory.CreateDirectory(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "DualSync")); File.AppendAllText(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "DualSync", "errors.log"), $"{DateTimeOffset.Now:u} {args.Exception}\n"); } catch (IOException) { }
+            try { Directory.CreateDirectory(DualSync.App.MainWindow.DataDirectory); File.AppendAllText(Path.Combine(DualSync.App.MainWindow.DataDirectory, "errors.log"), $"{DateTimeOffset.Now:u} {args.Exception}\n"); } catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { }
             MessageBox.Show("DualSync encountered an error. " + args.Exception.Message, "DualSync");
             args.Handled = true;
         };

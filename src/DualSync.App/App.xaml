@@ -6,7 +6,6 @@
     <SolidColorBrush x:Key="MutedBrush" Color="#9EADC1"/>
     <SolidColorBrush x:Key="AccentBrush" Color="#61DBCA"/>
     <Style TargetType="Window"><Setter Property="Background" Value="{StaticResource BackgroundBrush}"/><Setter Property="Foreground" Value="{StaticResource TextBrush}"/><Setter Property="FontFamily" Value="Segoe UI"/><Setter Property="FontSize" Value="14"/></Style>
-    <Style TargetType="TextBlock"><Setter Property="Foreground" Value="{StaticResource TextBrush}"/></Style>
     <Style x:Key="Muted" TargetType="TextBlock"><Setter Property="Foreground" Value="{StaticResource MutedBrush}"/><Setter Property="TextWrapping" Value="Wrap"/></Style>
     <Style x:Key="Card" TargetType="Border"><Setter Property="Background" Value="{StaticResource PanelBrush}"/><Setter Property="CornerRadius" Value="16"/><Setter Property="Padding" Value="24"/><Setter Property="Margin" Value="0,0,16,16"/><Setter Property="BorderBrush" Value="#243044"/><Setter Property="BorderThickness" Value="1"/></Style>
     <Style TargetType="Button">

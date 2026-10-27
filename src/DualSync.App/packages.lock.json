@@ -33,6 +33,7 @@
       "dualsync.core": {
         "type": "Project"
       }
-    }
+    },
+    "net10.0-windows7.0/win-x64": {}
   }
 }
