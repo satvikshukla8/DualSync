@@ -4,6 +4,8 @@
 
 Unzip the entire portable package to a writable folder and run `DualSync.exe`. Keep its DLLs and runtime files together. The package includes its .NET runtime and does not need an installer, an administrator account, or a separate runtime installation.
 
+If you need a virtual source, choose **Set up audio cable** on the dashboard. DualSync can download and open the official VB-CABLE installer after you opt in. That separate driver installation requires Windows administrator approval and may require a restart. Existing cables are reused. See [integrated cable setup](cable-setup.md) for licensing, verification, and removal details.
+
 The alpha executable is not code signed. Distribution signing and installer design remain release tasks. Do not disable Windows security controls to run the app.
 
 ## Choose an audio source
@@ -12,7 +14,7 @@ DualSync currently captures an existing Windows playback endpoint. It does not c
 
 A source with audible speakers will continue playing the original stream. Use an existing virtual endpoint or another source whose physical output is silent independently of the Windows endpoint volume. Muting a source endpoint can also silence loopback capture.
 
-On the development PC, existing VB-Audio Virtual Cable endpoints were detected. They may provide a useful source without running Voicemeeter, but this has not yet been validated. The cable is an external component, is not bundled, and is not required to build DualSync. Its presence does not establish its volume behavior or redistribution rights.
+The owner has reported successful playback and Windows-volume control using an existing VB-Audio Virtual Cable. The cable is a separately licensed external component and is not required to build DualSync. The setup helper fetches it on demand; the driver is not bundled in the portable app.
 
 Before changing a Windows default playback device, note the current device name. If you choose to route system audio into a different source, make that change yourself in Windows Sound settings. DualSync neither makes that change nor assumes permission to make it. Close or stop any other software that is independently forwarding the same source to the same outputs, to avoid hearing two streams.
 
@@ -48,7 +50,7 @@ Settings offers close-to-tray and open-in-tray options. Tray menus control both 
 
 Settings, profiles, and bounded error logs are stored in `%LOCALAPPDATA%\DualSync`. Use **Open data folder** in Settings to find them. A diagnostic report copies endpoint names, IDs, and settings only when requested.
 
-To remove the app, disable launch at sign-in if enabled, choose **Quit DualSync** in the tray, and remove the portable folder. Remove the data folder separately if you want to discard settings. DualSync installs no driver.
+To remove the app, disable launch at sign-in if enabled, choose **Quit DualSync** in the tray, and remove the portable folder. Remove the data folder separately if you want to discard settings. An optionally installed VB-CABLE driver is shared system software and is not removed with DualSync; follow VB-Audio's removal instructions if you no longer need it.
 
 To restore your previous audio routing, stop DualSync and select the previously noted Windows default playback device. The application itself has no default-device change to undo.
 

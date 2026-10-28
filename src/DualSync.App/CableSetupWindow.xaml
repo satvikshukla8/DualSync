@@ -1,0 +1,50 @@
+<Window x:Class="DualSync.App.CableSetupWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="DualSync · audio cable setup" Width="720" Height="730" MinWidth="620" MinHeight="580"
+        WindowStartupLocation="CenterOwner" Background="{StaticResource BackgroundBrush}"
+        Foreground="{StaticResource TextBrush}" FontFamily="Segoe UI" FontSize="14">
+  <ScrollViewer VerticalScrollBarVisibility="Auto">
+    <StackPanel Margin="24">
+      <TextBlock Text="Set up an audio cable" FontSize="25" FontWeight="SemiBold"/>
+      <TextBlock Text="DualSync uses a virtual playback device as its source. It can download and open the official VB-CABLE installer for you."
+                 Style="{StaticResource Muted}" Margin="0,10,0,16"/>
+      <Border Style="{StaticResource Card}" Margin="0,0,0,16" Padding="16">
+        <StackPanel>
+          <TextBlock Text="VB-CABLE by VB-Audio Software" FontWeight="SemiBold" FontSize="17"/>
+          <TextBlock Text="A separately licensed, proprietary donationware driver. If you find VB-CABLE useful, please support VB-Audio. Only the standard cable is offered here."
+                     Style="{StaticResource Muted}" FontSize="12" Margin="0,8,0,12"/>
+          <WrapPanel>
+            <Button Content="VB-Audio website" Click="Website_Click" Padding="12,8"/>
+            <Button Content="License / distribution terms" Click="Terms_Click" Padding="12,8"/>
+            <Button Content="Support VB-Audio" Click="Donate_Click" Padding="12,8"/>
+          </WrapPanel>
+        </StackPanel>
+      </Border>
+      <TextBlock x:Name="SetupStatus" Text="Checking for an existing cable…" TextWrapping="Wrap" Foreground="{StaticResource AccentBrush}" Margin="0,0,0,14" AutomationProperties.LiveSetting="Polite"/>
+      <ComboBox x:Name="ExistingCable" DisplayMemberPath="Name" AutomationProperties.Name="Installed audio cable" Margin="0,0,0,12"/>
+      <WrapPanel Margin="0,0,0,18">
+        <Button x:Name="UseCableButton" Content="Use installed cable" Click="UseCable_Click" IsEnabled="False"/>
+        <Button x:Name="CheckButton" Content="Check again" Click="Check_Click"/>
+      </WrapPanel>
+      <CheckBox x:Name="Consent" Checked="Consent_Changed" Unchecked="Consent_Changed">
+        <TextBlock Text="I want to install VB-Audio's driver. I understand Windows will request administrator approval and a restart may be needed."
+                   TextWrapping="Wrap" MaxWidth="590"/>
+      </CheckBox>
+      <WrapPanel Margin="0,8,0,12">
+        <Button x:Name="InstallButton" Content="Install VB-CABLE" Click="Install_Click" IsEnabled="False"/>
+        <Button x:Name="CancelButton" Content="Cancel download" Click="Cancel_Click" IsEnabled="False"/>
+      </WrapPanel>
+      <Expander x:Name="PackageLicense" Header="VB-CABLE package license" Foreground="{StaticResource TextBrush}" Visibility="Collapsed" Margin="0,6,0,14">
+        <TextBox x:Name="LicenseText" IsReadOnly="True" TextWrapping="Wrap" Height="160" VerticalScrollBarVisibility="Auto" Margin="0,8,0,0" AutomationProperties.Name="VB-CABLE license"/>
+      </Expander>
+      <TextBlock Text="The official setup window keeps its Install Driver confirmation. If it offers Remove Driver instead, close it: a cable is already installed. DualSync does not silently replace drivers, restart Windows, or change your default output."
+                 Style="{StaticResource Muted}" FontSize="12" Margin="0,0,0,18"/>
+      <Separator Background="#34445A" Margin="0,0,0,16"/>
+      <TextBlock Text="After installation" FontSize="17" FontWeight="SemiBold"/>
+      <TextBlock Text="Restart Windows as recommended by VB-Audio, reopen DualSync, and choose Use installed cable. For system-wide audio and keyboard volume keys, select the same cable as your output in Windows Sound settings."
+                 Style="{StaticResource Muted}" FontSize="12" Margin="0,8,0,12"/>
+      <WrapPanel><Button Content="Open Windows Sound settings" Click="SoundSettings_Click"/><Button Content="Close" Click="Close_Click"/></WrapPanel>
+    </StackPanel>
+  </ScrollViewer>
+</Window>

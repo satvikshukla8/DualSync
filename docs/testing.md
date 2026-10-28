@@ -4,7 +4,7 @@
 
 Run `./scripts/build.ps1` to restore locked dependencies, build all projects, and execute the test program. The test runner exits with a nonzero code on failure; `dotnet test` is not the entry point for this dependency-free test harness.
 
-The 22 tests cover:
+The 27 tests cover:
 
 - Biquad stability across supported band centers, sample rates, and gain limits.
 - Analytical and measured sine-wave frequency response, without fixed attenuation.
@@ -17,6 +17,7 @@ The 22 tests cover:
 - Feedback, duplicate-output, and unavailable-device validation.
 - Numeric settings validation, serialization, atomic writes, and recovery.
 - Managed allocations in steady-state DSP processing.
+- Cable identification, download integrity, safe extraction, license preservation, and cancellation.
 
 WASAPI format conversion is delegated to Windows rather than reimplemented. Resampling between endpoint formats therefore requires Windows integration testing. No adaptive resampler or clock-synchronization algorithm is claimed by this version.
 
@@ -27,11 +28,14 @@ dotnet run --project tools/DualSync.Diagnostics -- --list
 dotnet run --project tools/DualSync.Diagnostics -- --benchmark
 dotnet run --project tools/DualSync.Diagnostics -- --route SOURCE_ID OUTPUT_A_ID OUTPUT_B_ID
 dotnet run --project tools/DualSync.Diagnostics -- --smoke SOURCE_ID OUTPUT_A_ID OUTPUT_B_ID
+dotnet run --project tools/DualSync.Diagnostics -- --prepare-cable-only C:\path\to\test-data
 ```
 
 `--list` reads endpoint metadata. `--benchmark` measures 60 seconds of offline two-speaker DSP, excluding capture, playback, UI, and transport. `--route` opens actual devices and forwards captured system audio for ten seconds at moderate software gain. It does not change defaults or endpoint volume. Use it only after checking the route and avoiding external duplicate playback.
 
 `--smoke` opens the selected source and outputs for two three-second start/stop cycles with zero software master gain. It verifies that reported output peaks remain zero and that streams are released between cycles. This checks stream initialization and lifecycle without playing the captured signal aloud.
+
+`--prepare-cable-only` downloads and verifies the real official cable package, including native Windows signature checks. It cannot launch the installer and does not change drivers. The real preparation path passed on 2026-10-28. Clean-machine installation, UAC cancellation, restart, and removal still need manual validation; see [cable setup](cable-setup.md).
 
 ## Recorded development checks — 2026-10-27
 

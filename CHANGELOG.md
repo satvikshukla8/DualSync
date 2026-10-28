@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.1.0-alpha.4 — 2026-10-28
+
+- Added on-demand VB-CABLE setup with explicit consent and the official administrator installer.
+- Added existing-cable detection and reuse, including checks for disabled endpoints.
+- Added package hash checks, bounded downloads, safe extraction, and native Windows signature checks.
+- Added vendor attribution, license and donation links, cancellation, and restart guidance.
+- Added a preparation-only diagnostic command and five tests, bringing the suite to 27 tests.
+
+The real download and signature-verification path passed without launching an installer. Clean-machine driver installation and reboot behavior remain to be tested. Presentation polish is deferred.
+
 ## 0.1.0-alpha.3 — 2026-10-27
 
 - Combined profiles, routing, EQ, and speaker controls into one dashboard.

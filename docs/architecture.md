@@ -8,6 +8,7 @@ This document describes the initial implementation and the decisions still requi
 | --- | --- | --- |
 | `DualSync.Core` | Peaking-EQ coefficients, signal processing, bounded stereo buffers, routing validation, profile models, settings persistence | .NET libraries |
 | `DualSync.Audio` | Enumerate endpoints, capture the source, create independent output streams, report device failures and buffer statistics | Core, NAudio.Wasapi |
+| `DualSync.Setup` | Prepare the official cable package, validate Windows signatures, and launch the vendor installer after consent | Core, Windows trust APIs |
 | `DualSync.App` | WPF controls, speaker view models, EQ response graph, profiles, tray, user-facing setup | Audio, Core |
 | `DualSync.Tests` | Deterministic synthetic signals and configuration tests | Core |
 | `DualSync.Diagnostics` | Inspect Windows endpoints and report engine behavior | Audio |
@@ -40,7 +41,7 @@ The application distinguishes its own software master gain from the selected sou
 
 Loopback's relationship to endpoint volume needs verification on the actual source. Applying software master gain to samples that are already scaled would apply volume twice. A source-volume mode therefore needs an explicit setting for whether captured samples already include that volume. Keyboard volume keys control Windows' default playback endpoint; that endpoint must be the chosen source for the expected behavior.
 
-Reliable integration through a named DualSync logical endpoint remains an open delivery requirement.
+Reliable integration through a named DualSync logical endpoint remains an open delivery requirement. Alpha 4 adds [opt-in setup of the standard VB-CABLE driver](cable-setup.md) as a separately licensed prerequisite, rather than creating a DualSync kernel driver. It does not programmatically change Windows default devices.
 
 ## Architecture alternatives
 

@@ -3,6 +3,7 @@
     <Project Path="src/DualSync.App/DualSync.App.csproj" />
     <Project Path="src/DualSync.Audio/DualSync.Audio.csproj" />
     <Project Path="src/DualSync.Core/DualSync.Core.csproj" />
+    <Project Path="src/DualSync.Setup/DualSync.Setup.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/DualSync.Tests/DualSync.Tests.csproj" />

@@ -5,6 +5,9 @@
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <AssemblyName>DualSync</AssemblyName>
   </PropertyGroup>
-  <ItemGroup><ProjectReference Include="../DualSync.Audio/DualSync.Audio.csproj" /></ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="../DualSync.Audio/DualSync.Audio.csproj" />
+    <ProjectReference Include="../DualSync.Setup/DualSync.Setup.csproj" />
+  </ItemGroup>
   <ItemGroup><Using Remove="System.Windows.Forms"/><Using Remove="System.Drawing"/></ItemGroup>
 </Project>

@@ -2,9 +2,17 @@ using System.Text.Json;
 using DualSync.Audio;
 using DualSync.Core;
 using System.Diagnostics;
+using DualSync.Setup;
 
 try
 {
+    if (args.Length == 2 && args[0] == "--prepare-cable-only")
+    {
+        var prepared = await new CableInstaller().PrepareAsync(args[1], new Progress<string>(Console.WriteLine));
+        Console.WriteLine(JsonSerializer.Serialize(new { prepared = true, prepared.InstallerPath, prepared.LicensePath,
+            note = "Download, extraction, hash, and Windows signatures checked only. No installer was run." }, SettingsStore.JsonOptions));
+        return 0;
+    }
     if (args.Length == 1 && args[0] == "--benchmark")
     {
         var bands = Presets.Get("Music");

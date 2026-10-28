@@ -269,9 +269,28 @@ public partial class MainWindow : Window
         catch (Exception ex) { StartupPreference.IsChecked = false; ShowError("Could not update startup preference", ex); }
     }
     private async void Refresh_Click(object sender, RoutedEventArgs e) => await RefreshDevicesAsync();
+    private async void CableSetup_Click(object sender, RoutedEventArgs e)
+    {
+        if (!model.CanSelectDevices) return;
+        wanted = false; // Do not auto-reconnect streams while a driver setup window is open.
+        var setup = new CableSetupWindow { Owner = this };
+        bool? accepted;
+        model.Busy = true;
+        try { accepted = setup.ShowDialog(); }
+        finally { model.Busy = false; }
+        if (accepted == true && setup.SelectedCableId is string id)
+        {
+            await RefreshDevicesAsync();
+            model.SourceId = id;
+            model.MasterModeIndex = (int)MasterMode.SourceEndpoint;
+            model.IncludesVolume = false;
+            Save();
+            model.Status = "Cable selected in DualSync. For system audio, choose the same output in Windows Sound settings. Windows defaults have not been changed.";
+        }
+    }
     private void CopyDiagnostics_Click(object sender, RoutedEventArgs e)
     {
-        var report = new StringBuilder("DualSync 0.1.0-alpha.3\n").AppendLine(Environment.OSVersion.ToString()).AppendLine(model.Diagnostic);
+        var report = new StringBuilder("DualSync 0.1.0-alpha.4\n").AppendLine(Environment.OSVersion.ToString()).AppendLine(model.Diagnostic);
         foreach (var device in model.Devices) report.AppendLine(device.ToString() + " | " + device.Id);
         report.AppendLine("Profile:\n" + System.Text.Json.JsonSerializer.Serialize(model.Snapshot, SettingsStore.JsonOptions));
         Clipboard.SetText(report.ToString()); model.Status = "Diagnostic report copied. It includes device names, IDs, and audio settings.";
@@ -283,7 +302,7 @@ public partial class MainWindow : Window
         "3. On the dashboard, open each speaker's Equalizer dropdown to tune it. Choose its left/right routing and add delay with the slider or ±1 ms buttons.\n\n" +
         "The final buffer shown is the live queue plus your added delay. It excludes the fixed 5 ms limiter lookahead, Windows' output buffer, and Bluetooth/device latency. It is not an acoustic latency measurement.\n\n" +
         "The original source can still be audible. Use a source that is silent independently of its Windows volume, or a suitable virtual endpoint you already have installed. Muting the source can also mute captured audio.\n\n" +
-        "This build does not install a virtual endpoint or change Windows defaults. A complete Voicemeeter replacement still depends on resolving that source requirement.\n\n" +
+        "Use Set up audio cable to download and open VB-Audio's official installer after opting in. Existing cables are reused. DualSync does not programmatically change Windows defaults.\n\n" +
         "Windows volume mode is configured in Settings and needs a volume test on your source. Bluetooth clock drift and jitter can still change timing over time.", "Set up DualSync", MessageBoxButton.OK, MessageBoxImage.Information);
     private void ShowError(string title, Exception ex) { lastError = ex.Message; model.Status = title + ": " + ex.Message; Log(ex.ToString()); }
     private static void Log(string text)

@@ -26,12 +26,18 @@
       "dualsync.audio": {
         "type": "Project",
         "dependencies": {
-          "DualSync.Core": "[0.1.0-alpha.3, )",
+          "DualSync.Core": "[0.1.0-alpha.4, )",
           "NAudio.Wasapi": "[3.2.0, )"
         }
       },
       "dualsync.core": {
         "type": "Project"
+      },
+      "dualsync.setup": {
+        "type": "Project",
+        "dependencies": {
+          "DualSync.Core": "[0.1.0-alpha.4, )"
+        }
       }
     },
     "net10.0-windows7.0/win-x64": {}

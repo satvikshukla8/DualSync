@@ -2,6 +2,10 @@
 
 DualSync's original code is licensed under MIT. No audio driver is bundled.
 
+## Optional VB-CABLE setup
+
+The app can download and open the standard VB-CABLE setup from VB-Audio's official website after explicit user consent. VB-CABLE is proprietary donationware by Vincent Burel / VB-Audio Software, copyright 2010–2024, and is not covered by DualSync's MIT license. Its original files and license remain unmodified. If you find VB-CABLE useful, please support its author at <https://vb-audio.com/Cable/>. Review the vendor's [licensing and distribution terms](https://vb-audio.com/Services/licensing.htm), including professional-use conditions. The app does not offer VB-CABLE A+B/C+D packages. See [cable setup](docs/cable-setup.md).
+
 ## NuGet dependencies
 
 The resolved package metadata and lock files were checked for this build.

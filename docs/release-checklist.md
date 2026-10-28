@@ -16,6 +16,7 @@
 - [ ] Device loss, reconnection, shutdown, and tray behavior pass.
 - [ ] One-hour playback completes with recorded resource and buffer observations.
 - [ ] Virtual-endpoint installation and licensing are resolved before describing the app as a standalone Voicemeeter replacement.
+- [ ] Test the opt-in cable installer on a clean Windows machine, including UAC denial, existing/disabled cable, restart, and removal.
 
 ## Publication
 

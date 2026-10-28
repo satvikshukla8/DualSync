@@ -1,4 +1,6 @@
 using System.Diagnostics;
+using System.IO.Compression;
+using System.Security.Cryptography;
 using System.Text.Json;
 using DualSync.Core;
 
@@ -235,6 +237,48 @@ var tests = new (string Name, Action Run)[]
         Check(migrated.SchemaVersion == 2 && migrated.Current.MasterMode == MasterMode.SourceEndpoint && !migrated.Current.LoopbackIncludesEndpointVolume, "Windows volume mode not migrated");
         Near(migrated.Current.Speakers[0].Volume, 0.23, 0); Near(migrated.Current.Speakers[0].DelayMs, 42, 0);
     }),
+    ("Cable detection accepts standard endpoints and excludes other VB-Audio products", () =>
+    {
+        Check(CablePackage.IsCableName("CABLE Input (VB-Audio Virtual Cable)"), "Cable input not recognized");
+        Check(CablePackage.IsCableName("Speakers (2- VB-Audio Virtual Cable)"), "Older cable endpoint not recognized");
+        Check(!CablePackage.IsCableName("Voicemeeter Input (VB-Audio Voicemeeter VAIO)"), "Voicemeeter mistaken for the standard cable");
+        Check(!CablePackage.IsCableName("CABLE-A Input (VB-Audio Cable A)"), "Paid extra cable mistaken for the standard package");
+    }),
+    ("Cable package integrity check rejects modified downloads before extraction", () =>
+    {
+        var directory = TestDirectory(); var archive = Path.Combine(directory, "cable.zip");
+        WriteTestZip(archive, false); var hash = Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(archive)));
+        File.AppendAllText(archive, "modified"); var destination = Path.Combine(directory, "package");
+        Throws<InvalidDataException>(() => CablePackage.ExtractVerifiedAsync(archive, destination, hash).GetAwaiter().GetResult());
+        Check(!Directory.Exists(destination), "Invalid package wrote extracted files");
+    }),
+    ("Verified cable archive preserves the installer and license files", () =>
+    {
+        var directory = TestDirectory(); var archive = Path.Combine(directory, "cable.zip");
+        WriteTestZip(archive, false); var hash = Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(archive)));
+        var destination = Path.Combine(directory, "package");
+        CablePackage.ExtractVerifiedAsync(archive, destination, hash).GetAwaiter().GetResult();
+        Check(File.ReadAllText(Path.Combine(destination, "readme.txt")) == "test license", "License contents changed");
+        Check(File.Exists(Path.Combine(destination, CablePackage.InstallerName)), "Installer missing");
+        Throws<IOException>(() => CablePackage.ExtractVerifiedAsync(archive, destination, hash).GetAwaiter().GetResult());
+    }),
+    ("Cable extraction rejects paths escaping its owned directory", () =>
+    {
+        var directory = TestDirectory(); var archive = Path.Combine(directory, "cable.zip");
+        WriteTestZip(archive, true); var hash = Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(archive)));
+        var destination = Path.Combine(directory, "package");
+        Throws<InvalidDataException>(() => CablePackage.ExtractVerifiedAsync(archive, destination, hash).GetAwaiter().GetResult());
+        Check(!File.Exists(Path.Combine(directory, "outside.txt")) && !Directory.Exists(destination), "Unsafe archive wrote files");
+    }),
+    ("Cancelled cable preparation does not extract a package", () =>
+    {
+        var directory = TestDirectory(); var archive = Path.Combine(directory, "cable.zip");
+        WriteTestZip(archive, false); var hash = Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(archive)));
+        using var cancellation = new CancellationTokenSource(); cancellation.Cancel();
+        var destination = Path.Combine(directory, "package");
+        Throws<OperationCanceledException>(() => CablePackage.ExtractVerifiedAsync(archive, destination, hash, cancellation.Token).GetAwaiter().GetResult());
+        Check(!Directory.Exists(destination), "Cancelled extraction wrote files");
+    }),
     ("Processing avoids managed allocations after warmup", () =>
     {
         var processor = new SpeakerProcessor(48000, new()); var signal = new float[960];
@@ -268,3 +312,15 @@ static float[] Tone(double frequency, double seconds, double amplitude)
     return result;
 }
 static double Rms(ReadOnlySpan<float> signal) { double sum = 0; foreach (var sample in signal) sum += sample * sample; return Math.Sqrt(sum / signal.Length); }
+static string TestDirectory()
+{
+    var path = Path.Combine(Environment.CurrentDirectory, "artifacts", "test-data", Guid.NewGuid().ToString("N"));
+    Directory.CreateDirectory(path); return path;
+}
+static void WriteTestZip(string path, bool unsafePath)
+{
+    using var archive = ZipFile.Open(path, ZipArchiveMode.Create);
+    using (var writer = new StreamWriter(archive.CreateEntry(CablePackage.InstallerName).Open())) writer.Write("inert test fixture, not an executable");
+    using (var writer = new StreamWriter(archive.CreateEntry("readme.txt").Open())) writer.Write("test license");
+    if (unsafePath) { using var writer = new StreamWriter(archive.CreateEntry("../outside.txt").Open()); writer.Write("must not extract"); }
+}
