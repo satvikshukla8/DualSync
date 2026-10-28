@@ -22,7 +22,11 @@ Before changing a Windows default playback device, note the current device name.
 2. In Dashboard, select the source and the two speakers.
 3. Press **Start audio** and play familiar music through the chosen source.
 4. Mute each speaker in turn to confirm that its controls act independently.
-5. Check the Equalizer and Routing tabs. Add delay to whichever speaker you hear first.
+5. Choose left/right routing on each speaker card. Open its Equalizer dropdown to tune it. Add delay to whichever speaker you hear first, using the slider or ±1 ms buttons.
+
+The profile selector at the top saves and loads the complete two-speaker setup. Open **Manage profiles** for rename, delete, and reset actions. Settings and detailed diagnostics remain on the Settings page.
+
+Each speaker shows **queue + added delay = final buffer**. Queue comes from the same live frame count used by diagnostics. The result is a software subtotal, not a measured end-to-end latency: limiter lookahead adds 5 ms, and Windows output buffers and Bluetooth/device latency add further delay. When audio is stopped, the live queue and total show a dash rather than a stale value. Delay-button changes update the subtotal immediately.
 
 If you hear feedback or repeated audio, stop DualSync and check the source and any external routing software. Stop audio before selecting different devices.
 

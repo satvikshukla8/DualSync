@@ -1,10 +1,18 @@
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using System.Windows.Input;
 using DualSync.Audio;
 using DualSync.Core;
 
 namespace DualSync.App;
+
+public sealed class ActionCommand(Action<object?> execute) : ICommand
+{
+    public event EventHandler? CanExecuteChanged { add { } remove { } }
+    public bool CanExecute(object? parameter) => true;
+    public void Execute(object? parameter) => execute(parameter);
+}
 
 public abstract class Observable : INotifyPropertyChanged
 {
@@ -32,10 +40,25 @@ public sealed class SpeakerViewModel : Observable
     private string? preset;
     private string telemetry = "Stopped";
     private double meter;
+    private double? queueMilliseconds;
+    public sealed record ChannelOption(ChannelMode Value, string Label)
+    {
+        public override string ToString() => Label;
+    }
+    public ChannelOption[] ChannelOptions { get; } =
+    [
+        new(ChannelMode.Stereo, "Stereo · left and right"),
+        new(ChannelMode.Left, "Left only"),
+        new(ChannelMode.Right, "Right only"),
+        new(ChannelMode.Mono, "Mono · blend left and right"),
+        new(ChannelMode.Custom, "Custom left / right mix")
+    ];
     public string Title { get; }
     public string Subtitle { get; }
     public ObservableCollection<AudioDevice> Devices { get; }
     public ObservableCollection<BandViewModel> Bands { get; }
+    public ICommand DelayStepCommand { get; }
+    public ICommand ResetEqCommand { get; }
     public string[] PresetNames => Presets.Names;
     public ChannelMode[] ChannelModes => Enum.GetValues<ChannelMode>();
     public event Action? Changed;
@@ -45,14 +68,43 @@ public sealed class SpeakerViewModel : Observable
         string[] labels = ["31", "63", "125", "250", "500", "1k", "2k", "4k", "8k", "16k"];
         Bands = new(labels.Select((label, i) => new BandViewModel(label, settings.Bands[i])));
         foreach (var band in Bands) band.Changed += BandsChanged;
+        DelayStepCommand = new ActionCommand(parameter => { if (int.TryParse(parameter?.ToString(), out var step)) AdjustDelay(step); });
+        ResetEqCommand = new ActionCommand(_ => Preset = "Balanced");
     }
     public SpeakerSettings Snapshot => settings with { Bands = Bands.Select(b => b.Gain).ToArray() };
     public string? DeviceId { get => settings.DeviceId; set { if (settings.DeviceId == value) return; settings = settings with { DeviceId = value }; Change(); } }
     public double Volume { get => settings.Volume * 100; set { settings = settings with { Volume = value / 100 }; Change(); } }
     public bool Muted { get => settings.Muted; set { settings = settings with { Muted = value }; Change(); } }
     public bool EqEnabled { get => settings.EqEnabled; set { settings = settings with { EqEnabled = value }; Change(); } }
-    public double DelayMs { get => settings.DelayMs; set { settings = settings with { DelayMs = Math.Round(value, 1) }; Change(); } }
-    public ChannelMode ChannelMode { get => settings.ChannelMode; set { settings = settings with { ChannelMode = value }; Change(); } }
+    public double DelayMs
+    {
+        get => settings.DelayMs;
+        set
+        {
+            var delay = Math.Round(Numbers.Clamp(value, 0, 500, 0), 1);
+            if (settings.DelayMs == delay) return;
+            settings = settings with { DelayMs = delay }; Change(); NotifyTiming();
+        }
+    }
+    public void AdjustDelay(int milliseconds) => DelayMs += milliseconds;
+    public ChannelMode ChannelMode
+    {
+        get => settings.ChannelMode;
+        set
+        {
+            settings = settings with { ChannelMode = value }; Change();
+            Notify(nameof(CustomMixEnabled)); Notify(nameof(RoutingDescription));
+        }
+    }
+    public bool CustomMixEnabled => ChannelMode == ChannelMode.Custom;
+    public string RoutingDescription => ChannelMode switch
+    {
+        ChannelMode.Left => "The left source channel plays through this speaker.",
+        ChannelMode.Right => "The right source channel plays through this speaker.",
+        ChannelMode.Mono => "Left and right are blended equally into mono.",
+        ChannelMode.Custom => "Set each source channel's contribution to the mono mix.",
+        _ => "Both source channels keep their original stereo positions."
+    };
     public double LeftMix { get => settings.LeftMix; set { settings = settings with { LeftMix = value }; Change(); } }
     public double RightMix { get => settings.RightMix; set { settings = settings with { RightMix = value }; Change(); } }
     public string? Preset
@@ -68,6 +120,21 @@ public sealed class SpeakerViewModel : Observable
     }
     public string Telemetry { get => telemetry; set => Set(ref telemetry, value); }
     public double Meter { get => meter; set => Set(ref meter, value); }
+    public string QueueDisplay => queueMilliseconds is double queue ? $"{queue:0.0} ms" : "—";
+    public string AddedDelayDisplay => $"{DelayMs:0.0} ms";
+    public string FinalBufferDisplay => queueMilliseconds is double queue ? $"{queue + DelayMs:0.0} ms" : "—";
+    public bool CanDecreaseDelay => DelayMs > 0;
+    public bool CanIncreaseDelay => DelayMs < 500;
+    public void UpdateQueue(int? frames)
+    {
+        queueMilliseconds = frames is int value ? Math.Max(0, value) * 1000.0 / AudioEngine.SampleRate : null;
+        NotifyTiming();
+    }
+    private void NotifyTiming()
+    {
+        Notify(nameof(QueueDisplay)); Notify(nameof(AddedDelayDisplay)); Notify(nameof(FinalBufferDisplay));
+        Notify(nameof(CanDecreaseDelay)); Notify(nameof(CanIncreaseDelay));
+    }
     public string HeadroomText => "Peak protection reduces gain only if the audio would overload. No fixed EQ volume cut.";
     private void BandsChanged() { if (loading) return; Preset = null; Change(nameof(Snapshot)); }
     private void Change([CallerMemberName] string? property = null)

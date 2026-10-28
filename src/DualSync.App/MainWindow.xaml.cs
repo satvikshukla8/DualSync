@@ -109,7 +109,12 @@ public partial class MainWindow : Window
         model.Busy = true;
         try { await engine.StopAsync(); model.Status = keepIntent ? "Device disconnected · Waiting to reconnect." : "Stopped · settings are saved"; }
         catch (Exception ex) { ShowError("Could not stop audio cleanly", ex); }
-        finally { model.Running = false; model.Busy = false; model.A.Meter = model.B.Meter = 0; }
+        finally
+        {
+            model.Running = false; model.Busy = false; model.A.Meter = model.B.Meter = 0;
+            model.A.UpdateQueue(null); model.B.UpdateQueue(null);
+            model.A.Telemetry = model.B.Telemetry = "Stopped";
+        }
     }
     private async void Playback_Click(object sender, RoutedEventArgs e)
     {
@@ -148,11 +153,17 @@ public partial class MainWindow : Window
             if (engine.IsRunning && model.Status.StartsWith("Playing", StringComparison.Ordinal)) model.Status = PlaybackStatus();
             if (++ticks % 4 == 0) await RefreshDevicesAsync();
             var stats = engine.Statistics();
+            if (stats.Length == 0)
+            {
+                model.A.UpdateQueue(null); model.B.UpdateQueue(null);
+                model.A.Meter = model.B.Meter = 0;
+            }
             foreach (var stat in stats)
             {
                 var speaker = stat.Speaker == 0 ? model.A : model.B;
                 speaker.Meter = stat.Peak * 100;
-                speaker.Telemetry = $"Buffer {stat.BufferedFrames / 48.0:0.#} ms · peak protection {stat.LimiterReductionDb:0.#} dB · clamp {stat.LimitedSamples:N0}";
+                speaker.UpdateQueue(stat.BufferedFrames);
+                speaker.Telemetry = $"Peak protection {stat.LimiterReductionDb:0.#} dB · safety clamp {stat.LimitedSamples:N0} samples";
             }
             model.Diagnostic = $"Engine: {(engine.IsRunning ? "playing" : "stopped")}   Capture: {engine.CapturedFrames:N0} frames\nSource Windows volume: {engine.SourceVolume:P0} · muted: {engine.SourceMuted}\n48,000 Hz · float stereo · shared-mode outputs · 80 ms output buffer + 5 ms peak protection\n" +
                 string.Join("\n", stats.Select(s => $"Speaker {(s.Speaker == 0 ? "A" : "B")}: queue {s.BufferedFrames / 48.0:0.#} ms | missing {s.UnderrunFrames:N0} | dropped {s.OverrunFrames:N0} | clamped {s.LimitedSamples:N0}")) +
@@ -240,7 +251,6 @@ public partial class MainWindow : Window
         if (MessageBox.Show(this, "Reset the current audio settings? Your saved profiles will remain available.", "Reset DualSync", MessageBoxButton.OKCancel) != MessageBoxResult.OK) return;
         await StopAsync(); loading = true; model.Load(new()); loading = false; Save();
     }
-    private void ResetEq_Click(object sender, RoutedEventArgs e) { if (sender is Button { Tag: SpeakerViewModel speaker }) speaker.Preset = "Balanced"; }
     private void Preferences_Changed(object sender, RoutedEventArgs e) { if (!loading) Save(); }
     private void StartupPreference_Click(object sender, RoutedEventArgs e)
     {
@@ -261,7 +271,7 @@ public partial class MainWindow : Window
     private async void Refresh_Click(object sender, RoutedEventArgs e) => await RefreshDevicesAsync();
     private void CopyDiagnostics_Click(object sender, RoutedEventArgs e)
     {
-        var report = new StringBuilder("DualSync 0.1.0-alpha.2\n").AppendLine(Environment.OSVersion.ToString()).AppendLine(model.Diagnostic);
+        var report = new StringBuilder("DualSync 0.1.0-alpha.3\n").AppendLine(Environment.OSVersion.ToString()).AppendLine(model.Diagnostic);
         foreach (var device in model.Devices) report.AppendLine(device.ToString() + " | " + device.Id);
         report.AppendLine("Profile:\n" + System.Text.Json.JsonSerializer.Serialize(model.Snapshot, SettingsStore.JsonOptions));
         Clipboard.SetText(report.ToString()); model.Status = "Diagnostic report copied. It includes device names, IDs, and audio settings.";
@@ -270,7 +280,8 @@ public partial class MainWindow : Window
     private void Help_Click(object sender, RoutedEventArgs e) => MessageBox.Show(this,
         "1. Pick a source endpoint that already receives your system audio. Both speakers must be different from this source.\n\n" +
         "2. Choose Speaker A and Speaker B, then press Start audio. Stop audio before changing devices.\n\n" +
-        "3. Use Equalizer to tune each speaker. Add delay to whichever speaker sounds earlier.\n\n" +
+        "3. On the dashboard, open each speaker's Equalizer dropdown to tune it. Choose its left/right routing and add delay with the slider or ±1 ms buttons.\n\n" +
+        "The final buffer shown is the live queue plus your added delay. It excludes the fixed 5 ms limiter lookahead, Windows' output buffer, and Bluetooth/device latency. It is not an acoustic latency measurement.\n\n" +
         "The original source can still be audible. Use a source that is silent independently of its Windows volume, or a suitable virtual endpoint you already have installed. Muting the source can also mute captured audio.\n\n" +
         "This build does not install a virtual endpoint or change Windows defaults. A complete Voicemeeter replacement still depends on resolving that source requirement.\n\n" +
         "Windows volume mode is configured in Settings and needs a volume test on your source. Bluetooth clock drift and jitter can still change timing over time.", "Set up DualSync", MessageBoxButton.OK, MessageBoxImage.Information);

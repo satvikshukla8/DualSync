@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.1.0-alpha.3 — 2026-10-27
+
+- Combined profiles, routing, EQ, and speaker controls into one dashboard.
+- Added a collapsible equalizer inside each speaker card.
+- Added live per-speaker queue, added delay, and their combined software buffer value.
+- Added ±1 ms delay buttons with 0–500 ms limits.
+- Added readable left/right channel choices and inline custom mixing controls.
+
+The displayed final buffer is queue plus added delay. It excludes limiter lookahead, Windows output buffering, and Bluetooth/device latency.
+
 ## 0.1.0-alpha.2 — 2026-10-27
 
 - Removed the sum-of-boosts attenuation that could make EQ almost silent.

@@ -43,8 +43,10 @@ dotnet run --project tools/DualSync.Diagnostics -- --smoke SOURCE_ID OUTPUT_A_ID
 - Bluetooth stream initialization: an attempted silent test was blocked because an output was already held in exclusive mode by another application. No application was stopped or reconfigured to bypass that condition.
 - Offline two-speaker DSP: 60 seconds processed in approximately 1.12 seconds wall time and 1.14 CPU seconds on the development PC. This is not a whole-app CPU or latency measurement.
 - Desktop: the portable executable launched. Dashboard and EQ layouts were visually inspected; background, text-inheritance, and close-event issues were repaired. Moving Speaker A's EQ updated its graph and persisted its gain while Speaker B stayed unchanged; Reset EQ restored a flat response. The packaged app closed successfully after the shutdown fix.
+- Owner feedback on alpha 2: playback, EQ, and Windows-volume behavior were reported as working. This is owner-reported hardware evidence, not independent acoustic measurement.
+- Alpha 3 UI preview: profiles, routing, and collapsible EQ were displayed together. With synthetic queue data, Speaker A showed 12 + 23 = 35 ms; clicking +1 ms changed this to 12 + 24 = 36 ms. At 500 ms added delay, the total was 512 ms and the increment button was disabled. The EQ dropdown expanded inline. Computer-use verification stopped when the owner pressed Escape; later interaction checks were not performed.
 
-No audible Bluetooth playback, acoustic timing, source-volume behavior, or one-hour reliability result has been claimed.
+Acoustic timing and one-hour reliability remain unverified. Synthetic queue values used for UI checks are not physical latency measurements.
 
 ## Hardware acceptance checklist
 

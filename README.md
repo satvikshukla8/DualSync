@@ -4,7 +4,7 @@ A free, open-source Windows 11 desktop app for playing system audio through two 
 
 DualSync is being built for everyday setups such as two Bluetooth speakers with different sound characteristics and playback delays. The interface focuses on independent equalization, simple volume controls, and speaker timing.
 
-**Status: runnable alpha, under hardware validation.** The desktop app and audio engine build successfully, 22 automated tests pass, and a silent two-output WASAPI test passed two start/stop cycles. The portable app launches and its interface has been inspected. Audible Bluetooth playback, source-volume behavior, and long-session reliability still require testing. There is no published GitHub release.
+**Status: runnable alpha, under hardware validation.** The desktop app and audio engine build successfully, 22 automated tests pass, and a silent two-output WASAPI test passed two start/stop cycles. The portable app launches and its interface has been inspected. The owner reports working Bluetooth playback, EQ, and Windows volume on the test setup. Long-session reliability and acoustic timing still require testing. There is no published GitHub release.
 
 ## Included in the alpha
 
@@ -13,7 +13,9 @@ DualSync is being built for everyday setups such as two Bluetooth speakers with 
 - Master volume, individual speaker volume, and mute.
 - Independent playback delay from 0–500 ms.
 - Stereo, left, right, mono, and custom channel mixing.
-- Saved profiles, system tray controls, and device reconnection handling.
+- One dashboard with profiles, inline left/right routing, and collapsible per-speaker EQ.
+- Live queue + added delay = final software buffer, with ±1 ms delay buttons.
+- System tray controls and device reconnection handling.
 - Optional Windows source-volume control, with a device-specific verification procedure.
 
 Independent Bluetooth devices have their own clocks and buffering. Static delay can reduce a steady timing difference; sample-accurate wireless synchronization is not promised.
