@@ -59,6 +59,7 @@ public sealed class SpeakerViewModel : Observable
     public ObservableCollection<BandViewModel> Bands { get; }
     public ICommand DelayStepCommand { get; }
     public ICommand ResetEqCommand { get; }
+    public SavedEqViewModel SavedEq { get; set; } = null!;
     public string[] PresetNames => Presets.Names;
     public ChannelMode[] ChannelModes => Enum.GetValues<ChannelMode>();
     public event Action? Changed;
@@ -148,6 +149,11 @@ public sealed class SpeakerViewModel : Observable
         for (var i = 0; i < 10; i++) Bands[i].Gain = settings.Bands[i];
         preset = null; loading = false; Notify(string.Empty);
     }
+    public void ApplyEq(EqSettings eq)
+    {
+        Load(eq.ApplyTo(Snapshot));
+        Changed?.Invoke();
+    }
 }
 
 public sealed class ShellViewModel : Observable
@@ -157,17 +163,62 @@ public sealed class ShellViewModel : Observable
     private string status = "Ready · choose a source and two speakers";
     private string diagnostic = "Start audio to view buffer and signal diagnostics.";
     private bool running, busy;
+    private bool applyingDualEq;
+    public EqPresetLibrary EqLibrary { get; }
+    public SavedEqViewModel DualEq { get; }
     public ObservableCollection<AudioDevice> Devices { get; } = [];
     public ObservableCollection<string> ProfileNames { get; } = [];
     public SpeakerViewModel A { get; }
     public SpeakerViewModel B { get; }
     public event Action<string>? Changed;
-    public ShellViewModel(AudioProfile initial)
+    public ShellViewModel(AudioProfile initial, IEnumerable<EqPreset>? eqPresets = null, IEnumerable<DualEqPreset>? dualEqPresets = null)
     {
         profile = initial.Sanitize(); master = profile.MasterVolume * 100;
         A = new("Speaker A", "Your first output", profile.Speakers[0], Devices);
         B = new("Speaker B", "Your second output", profile.Speakers[1], Devices);
-        A.Changed += () => Changed?.Invoke("Speaker"); B.Changed += () => Changed?.Invoke("Speaker");
+        A.Changed += SpeakerChanged; B.Changed += SpeakerChanged;
+        EqLibrary = new(eqPresets, dualEqPresets);
+        A.SavedEq = CreateSinglePicker(A); B.SavedEq = CreateSinglePicker(B);
+        DualEq = new(name =>
+        {
+            var eq = EqLibrary.LoadDual(name);
+            applyingDualEq = true;
+            try { A.ApplyEq(eq.A); B.ApplyEq(eq.B); }
+            finally { applyingDualEq = false; }
+            Changed?.Invoke("Speaker");
+            Status = $"Loaded dual EQ: {name} · both speakers updated";
+        }, name =>
+        {
+            var saved = EqLibrary.SaveDual(name, A.Snapshot, B.Snapshot);
+            RefreshEqLibraries(); DualEq!.SelectedName = saved;
+            Changed?.Invoke("EqLibrary"); Status = $"Saved dual EQ: {saved}";
+        }, name =>
+        {
+            EqLibrary.DeleteDual(name); RefreshEqLibraries();
+            Changed?.Invoke("EqLibrary"); Status = $"Deleted dual EQ: {name} · current EQ kept";
+        }, message => Status = message);
+        RefreshEqLibraries();
+    }
+    private void SpeakerChanged() { if (!applyingDualEq) Changed?.Invoke("Speaker"); }
+    private SavedEqViewModel CreateSinglePicker(SpeakerViewModel speaker) => new(name =>
+    {
+        speaker.ApplyEq(EqLibrary.LoadSingle(name));
+        Status = $"Loaded EQ: {name} → {speaker.Title}";
+    }, name =>
+    {
+        var saved = EqLibrary.SaveSingle(name, speaker.Snapshot);
+        RefreshEqLibraries(); speaker.SavedEq.SelectedName = saved;
+        Changed?.Invoke("EqLibrary"); Status = $"Saved EQ: {saved} · available to either speaker";
+    }, name =>
+    {
+        EqLibrary.DeleteSingle(name); RefreshEqLibraries();
+        Changed?.Invoke("EqLibrary"); Status = $"Deleted EQ: {name} · current EQ kept";
+    }, message => Status = message);
+    private void RefreshEqLibraries()
+    {
+        var singles = EqLibrary.Singles.Select(p => p.Name).ToArray();
+        A.SavedEq.Refresh(singles); B.SavedEq.Refresh(singles);
+        DualEq.Refresh(EqLibrary.Duals.Select(p => p.Name));
     }
     public AudioProfile Snapshot => profile with { MasterVolume = master / 100, Speakers = [A.Snapshot, B.Snapshot] };
     public string? SourceId { get => profile.SourceId; set { if (profile.SourceId == value) return; profile = profile with { SourceId = value }; Notify(); Changed?.Invoke(nameof(SourceId)); } }

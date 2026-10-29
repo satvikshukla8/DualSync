@@ -28,6 +28,16 @@ Before changing a Windows default playback device, note the current device name.
 
 The profile selector at the top saves and loads the complete two-speaker setup. Open **Manage profiles** for rename, delete, and reset actions. Settings and detailed diagnostics remain on the Settings page.
 
+## Save custom EQ presets
+
+Open a speaker's **Equalizer** dropdown, adjust its bands, and enter a name under **Custom EQ presets**. Press **Save EQ**. The saved curve is available on either speaker: choose it from that speaker's saved EQ list and press **Load EQ**. For example, load a custom Rock curve on A and a custom Pop curve on B.
+
+To save that combination, enter **Indie** in **Dual EQ presets** and press **Save EQ**. Loading Indie later restores the saved A curve to A and the saved B curve to B. The pair contains copies of both curves, so editing or deleting an individual preset does not change it.
+
+EQ presets store all ten bands and each EQ's enabled state. Loading them works during playback and leaves devices, volume, mute, routing, and delay alone. Selecting a saved name does not apply it until you press **Load EQ**. To update a saved preset, select or type its name and press **Replace EQ**; use a new name to keep another version. **Delete** removes the selected saved preset and keeps the current sound. Both libraries persist across restarts and full setup profile changes.
+
+## Read the buffer display
+
 Each speaker shows **queue + added delay = final buffer**. Queue comes from the same live frame count used by diagnostics. The result is a software subtotal, not a measured end-to-end latency: limiter lookahead adds 5 ms, and Windows output buffers and Bluetooth/device latency add further delay. When audio is stopped, the live queue and total show a dash rather than a stale value. Delay-button changes update the subtotal immediately.
 
 If you hear feedback or repeated audio, stop DualSync and check the source and any external routing software. Stop audio before selecting different devices.

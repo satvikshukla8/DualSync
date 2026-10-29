@@ -37,7 +37,7 @@ public partial class MainWindow : Window
     public MainWindow()
     {
         store = new(Path.Combine(DataDirectory, "settings.json")); settings = store.Load();
-        model = new(settings.Current); DataContext = model;
+        model = new(settings.Current, settings.EqPresets, settings.DualEqPresets); DataContext = model;
         InitializeComponent();
         TrayPreference.IsChecked = settings.MinimizeToTray;
         StartMinimizedPreference.IsChecked = settings.StartMinimized;
@@ -83,7 +83,11 @@ public partial class MainWindow : Window
     private void Save()
     {
         if (loading) return;
-        settings = settings with { Current = model.Snapshot, MinimizeToTray = TrayPreference.IsChecked == true, StartMinimized = StartMinimizedPreference.IsChecked == true };
+        settings = settings with
+        {
+            Current = model.Snapshot, EqPresets = model.EqLibrary.Singles.ToList(), DualEqPresets = model.EqLibrary.Duals.ToList(),
+            MinimizeToTray = TrayPreference.IsChecked == true, StartMinimized = StartMinimizedPreference.IsChecked == true
+        };
         try { store.Save(settings); }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { ShowError("Could not save settings", ex); }
     }
@@ -290,7 +294,7 @@ public partial class MainWindow : Window
     }
     private void CopyDiagnostics_Click(object sender, RoutedEventArgs e)
     {
-        var report = new StringBuilder("DualSync 0.1.0-alpha.4\n").AppendLine(Environment.OSVersion.ToString()).AppendLine(model.Diagnostic);
+        var report = new StringBuilder("DualSync 0.1.0-alpha.5\n").AppendLine(Environment.OSVersion.ToString()).AppendLine(model.Diagnostic);
         foreach (var device in model.Devices) report.AppendLine(device.ToString() + " | " + device.Id);
         report.AppendLine("Profile:\n" + System.Text.Json.JsonSerializer.Serialize(model.Snapshot, SettingsStore.JsonOptions));
         Clipboard.SetText(report.ToString()); model.Status = "Diagnostic report copied. It includes device names, IDs, and audio settings.";
@@ -299,7 +303,7 @@ public partial class MainWindow : Window
     private void Help_Click(object sender, RoutedEventArgs e) => MessageBox.Show(this,
         "1. Pick a source endpoint that already receives your system audio. Both speakers must be different from this source.\n\n" +
         "2. Choose Speaker A and Speaker B, then press Start audio. Stop audio before changing devices.\n\n" +
-        "3. On the dashboard, open each speaker's Equalizer dropdown to tune it. Choose its left/right routing and add delay with the slider or ±1 ms buttons.\n\n" +
+        "3. On the dashboard, open each speaker's Equalizer dropdown to tune it and save custom EQ presets. Use Dual EQ presets to save both speakers' individual curves together. EQ loads keep your other audio settings. Choose left/right routing and add delay with the slider or ±1 ms buttons.\n\n" +
         "The final buffer shown is the live queue plus your added delay. It excludes the fixed 5 ms limiter lookahead, Windows' output buffer, and Bluetooth/device latency. It is not an acoustic latency measurement.\n\n" +
         "The original source can still be audible. Use a source that is silent independently of its Windows volume, or a suitable virtual endpoint you already have installed. Muting the source can also mute captured audio.\n\n" +
         "Use Set up audio cable to download and open VB-Audio's official installer after opting in. Existing cables are reused. DualSync does not programmatically change Windows defaults.\n\n" +

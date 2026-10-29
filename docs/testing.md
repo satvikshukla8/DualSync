@@ -4,7 +4,7 @@
 
 Run `./scripts/build.ps1` to restore locked dependencies, build all projects, and execute the test program. The test runner exits with a nonzero code on failure; `dotnet test` is not the entry point for this dependency-free test harness.
 
-The 27 tests cover:
+The 33 core tests cover:
 
 - Biquad stability across supported band centers, sample rates, and gain limits.
 - Analytical and measured sine-wave frequency response, without fixed attenuation.
@@ -18,6 +18,9 @@ The 27 tests cover:
 - Numeric settings validation, serialization, atomic writes, and recovery.
 - Managed allocations in steady-state DSP processing.
 - Cable identification, download integrity, safe extraction, license preservation, and cancellation.
+- Single and dual EQ snapshot isolation, settings preservation, disk reload, replacement, deletion, limits, malformed entries, and migration.
+
+Five Windows app tests exercise cross-speaker EQ loading, batched dual loading, shared-list updates, full setup independence, and compiled WPF save/load bindings at a compact panel width. These tests do not open audio devices or change Windows settings.
 
 WASAPI format conversion is delegated to Windows rather than reimplemented. Resampling between endpoint formats therefore requires Windows integration testing. No adaptive resampler or clock-synchronization algorithm is claimed by this version.
 
@@ -65,6 +68,8 @@ Record the source and speaker names, Windows build, profile, and test duration. 
 | Channel routing | Play a known left/right test file; select Left, Right, Mono, Custom | Correct signals appear at each output |
 | Static delay | Use percussive audio and add 1–10 ms to the earlier speaker | A useful steady alignment can be found |
 | Profiles | Save, rename, load, close, and restart | Device IDs and individual parameters persist |
+| Custom EQ presets | Save different curves from A and B, load each on either side, replace one, then restart | The chosen EQ loads on that side; other audio settings and saved curves remain intact |
+| Dual EQ presets | Save two distinct curves as a pair, change both, then load the pair during playback | Both original curves and enabled states return to their original sides; volume, routing, and delay stay the same |
 | Tray | Hide the window, use tray controls, then quit | Audio continues while hidden and stops on quit |
 | Device loss | Disconnect one device during playback, then reconnect | Engine stops safely and retries the chosen devices |
 | Startup option | Explicitly enable and disable launch at sign-in | Only the DualSync Run entry changes |

@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.1.0-alpha.5 — 2026-10-29
+
+- Added named custom EQ presets that can be saved from and loaded onto either speaker.
+- Added dual EQ presets containing separate snapshots of Speaker A and Speaker B's bands and enabled states.
+- Added save, replace, load, and delete controls inside each EQ panel and a shared dual EQ section on the dashboard.
+- Kept EQ libraries independent of full setup profiles; loading EQ leaves devices, levels, mute, routing, and delay intact.
+- Added settings migration, six core regression tests, and five Windows app tests for preset workflows and compiled template bindings.
+
+EQ presets load during playback. A dual load sends both sides together in one audio-engine update. Physical playback with the new preset controls still needs an owner test.
+
 ## 0.1.0-alpha.4 — 2026-10-28
 
 - Added on-demand VB-CABLE setup with explicit consent and the official administrator installer.

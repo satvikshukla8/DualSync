@@ -11,6 +11,8 @@ try {
     if ($LASTEXITCODE -ne 0) { throw 'Build failed.' }
     & $Dotnet 'tests/DualSync.Tests/bin/Release/net10.0/DualSync.Tests.dll'
     if ($LASTEXITCODE -ne 0) { throw 'Tests failed.' }
+    & $Dotnet 'tests/DualSync.App.Tests/bin/Release/net10.0-windows/DualSync.App.Tests.dll'
+    if ($LASTEXITCODE -ne 0) { throw 'App tests failed.' }
     if ($Package) {
         $version = ([xml](Get-Content -Raw 'Directory.Build.props')).Project.PropertyGroup.Version
         $outputPath = Join-Path $projectRoot "artifacts/portable-$version-win-x64"

@@ -11,6 +11,7 @@ This document describes the initial implementation and the decisions still requi
 | `DualSync.Setup` | Prepare the official cable package, validate Windows signatures, and launch the vendor installer after consent | Core, Windows trust APIs |
 | `DualSync.App` | WPF controls, speaker view models, EQ response graph, profiles, tray, user-facing setup | Audio, Core |
 | `DualSync.Tests` | Deterministic synthetic signals and configuration tests | Core |
+| `DualSync.App.Tests` | EQ preset view-model workflows and compiled WPF template bindings without opening audio devices | App |
 | `DualSync.Diagnostics` | Inspect Windows endpoints and report engine behavior | Audio |
 
 The audio engine must operate without a window. The core must remain testable without Windows audio hardware. UI work and disk I/O stay outside audio callbacks.
@@ -63,6 +64,8 @@ Static speaker delay is independent of the buffer. Device clocks can drift, whil
 ## Settings and safety boundaries
 
 Profiles identify endpoints by stable Windows IDs and store processing parameters separately from the engine. Settings use a schema-versioned JSON file, atomic replacement, numeric validation, and recovery copies for unreadable configurations.
+
+Schema 3 adds two independent EQ libraries alongside full setup profiles. Single presets store ten bands and an enabled flag and can be applied to either output; dual presets store separate A/B snapshots. Capture, load, and library export copy band arrays. A dual load updates both view models before sending one complete profile to the audio engine. Neither EQ operation changes endpoint IDs, master settings, speaker levels, mute, routing, or delay. Loading a full setup does not replace either EQ library. Schema 1 and 2 settings upgrade while retaining their existing profiles and speaker settings.
 
 Startup registration is optional. Driver installation, default-device changes, persistent system settings, repository visibility changes, and public releases require explicit user approval. Closing or stopping the engine must release its capture stream, output streams, volume subscription, and endpoint objects.
 

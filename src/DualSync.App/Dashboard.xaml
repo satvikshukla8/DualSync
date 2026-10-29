@@ -42,6 +42,24 @@
     </Setter>
   </Style>
 
+  <DataTemplate x:Key="SavedEqPicker">
+    <StackPanel>
+      <Grid>
+        <Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+        <ComboBox ItemsSource="{Binding Names}" SelectedItem="{Binding SelectedName}" AutomationProperties.Name="Saved custom EQ preset"
+                  Margin="0,0,8,0" ToolTip="Choose a saved EQ, then press Load EQ"/>
+        <Button Grid.Column="1" Content="Load EQ" Command="{Binding LoadCommand}" IsEnabled="{Binding HasSelection}" Padding="10,8" Margin="0,0,6,0"/>
+        <Button Grid.Column="2" Content="Delete" Command="{Binding DeleteCommand}" IsEnabled="{Binding HasSelection}" Padding="10,8" Margin="0"/>
+      </Grid>
+      <Grid Margin="0,8,0,0">
+        <Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+        <TextBox Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}" MaxLength="80" AutomationProperties.Name="Custom EQ preset name"
+                 ToolTip="Name the current EQ to save it. An existing name replaces that saved EQ." Margin="0,0,8,0"/>
+        <Button Grid.Column="1" Content="{Binding SaveLabel}" Command="{Binding SaveCommand}" IsEnabled="{Binding CanSave}" Padding="10,8" Margin="0"/>
+      </Grid>
+    </StackPanel>
+  </DataTemplate>
+
   <DataTemplate x:Key="EqPanel">
     <StackPanel>
       <DockPanel>
@@ -63,11 +81,16 @@
           </DataTemplate>
         </ItemsControl.ItemTemplate>
       </ItemsControl>
-      <Grid Margin="0,18,0,0">
+      <TextBlock Text="Built-in curves" Style="{StaticResource Muted}" FontSize="12" Margin="0,18,0,6"/>
+      <Grid>
         <Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
         <ComboBox ItemsSource="{Binding PresetNames}" SelectedItem="{Binding Preset}" AutomationProperties.Name="EQ preset" Margin="0,0,12,0"/>
         <Button Grid.Column="1" Content="Reset EQ" Command="{Binding ResetEqCommand}"/>
       </Grid>
+      <TextBlock Text="Custom EQ presets · use on either speaker" FontWeight="SemiBold" Margin="0,18,0,8"/>
+      <ContentControl Content="{Binding SavedEq}" ContentTemplate="{StaticResource SavedEqPicker}"/>
+      <TextBlock Text="Saves this speaker's 10 bands and EQ enabled state. Use a new name to keep another version."
+                 Style="{StaticResource Muted}" FontSize="12" Margin="0,8,0,0"/>
       <TextBlock Text="{Binding HeadroomText}" Style="{StaticResource Muted}" FontSize="12" Margin="0,12,0,0"/>
     </StackPanel>
   </DataTemplate>

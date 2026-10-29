@@ -49,15 +49,19 @@ public sealed record AudioProfile
 
 public sealed record AppSettings
 {
-    public int SchemaVersion { get; init; } = 2;
+    public int SchemaVersion { get; init; } = 3;
     public AudioProfile Current { get; init; } = new();
     public List<AudioProfile> Profiles { get; init; } = [];
+    public List<EqPreset> EqPresets { get; init; } = [];
+    public List<DualEqPreset> DualEqPresets { get; init; } = [];
     public bool MinimizeToTray { get; init; }
     public bool StartMinimized { get; init; }
     public AppSettings Sanitize() => this with
     {
         Current = (Current ?? new()).Sanitize(),
-        Profiles = (Profiles ?? []).Where(p => p is not null).Take(100).Select(p => p.Sanitize()).ToList()
+        Profiles = (Profiles ?? []).Where(p => p is not null).Take(100).Select(p => p.Sanitize()).ToList(),
+        EqPresets = new EqPresetLibrary(EqPresets).Singles.ToList(),
+        DualEqPresets = new EqPresetLibrary(dualPresets: DualEqPresets).Duals.ToList()
     };
 }
 
@@ -106,7 +110,8 @@ public sealed class SettingsStore(string path)
                 }
                 value = value with { SchemaVersion = 2, Current = Upgrade(value.Current), Profiles = (value.Profiles ?? []).Select(Upgrade).ToList() };
             }
-            if (value.SchemaVersion != 2) throw new JsonException("Unsupported settings version");
+            if (value.SchemaVersion == 2) value = value with { SchemaVersion = 3 };
+            if (value.SchemaVersion != 3) throw new JsonException("Unsupported settings version");
             return value.Sanitize();
         }
         catch (Exception ex) when (ex is JsonException or IOException or UnauthorizedAccessException)

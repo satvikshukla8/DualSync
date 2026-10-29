@@ -4,13 +4,14 @@ A free, open-source Windows 11 desktop app for playing system audio through two 
 
 DualSync is being built for everyday setups such as two Bluetooth speakers with different sound characteristics and playback delays. The interface focuses on independent equalization, simple volume controls, and speaker timing.
 
-**Status: runnable alpha, under hardware validation.** The desktop app and audio engine build successfully, 27 automated tests pass, and a silent two-output WASAPI test passed two start/stop cycles. The portable app launches and its interface has been inspected. The owner reports working Bluetooth playback, EQ, and Windows volume on the test setup. Long-session reliability and acoustic timing still require testing. There is no published GitHub release.
+**Status: runnable alpha, under hardware validation.** The desktop app and audio engine build successfully, with 33 core tests and five Windows app tests. A silent two-output WASAPI test passed two start/stop cycles. The portable app launches and its interface has been inspected. The owner reports working Bluetooth playback, EQ, and Windows volume on the test setup. Long-session reliability and acoustic timing still require testing. There is no published GitHub release.
 
 ## Included in the alpha
 
 - Optional integrated VB-CABLE setup: automatic download and extraction, signature checks, and the official administrator installer.
 - Two independently selected Windows playback devices.
 - A separate 10-band equalizer for each speaker, with presets and signal-dependent peak protection.
+- Saved custom EQ presets for either speaker, plus dual EQ presets that restore both speakers' individual curves together.
 - Master volume, individual speaker volume, and mute.
 - Independent playback delay from 0–500 ms.
 - Stereo, left, right, mono, and custom channel mixing.
@@ -31,7 +32,8 @@ DualSync/
 │   ├── DualSync.Setup/         # Verified cable download and vendor installer launch
 │   └── DualSync.App/           # WPF desktop UI, EQ graphs, tray and app lifecycle
 ├── tests/
-│   └── DualSync.Tests/         # Synthetic-audio and configuration tests
+│   ├── DualSync.Tests/         # Synthetic-audio and configuration tests
+│   └── DualSync.App.Tests/     # EQ workflows and compiled WPF binding checks
 ├── tools/
 │   └── DualSync.Diagnostics/   # Windows endpoint and engine diagnostics
 ├── docs/

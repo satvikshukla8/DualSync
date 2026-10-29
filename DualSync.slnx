@@ -6,6 +6,7 @@
     <Project Path="src/DualSync.Setup/DualSync.Setup.csproj" />
   </Folder>
   <Folder Name="/tests/">
+    <Project Path="tests/DualSync.App.Tests/DualSync.App.Tests.csproj" />
     <Project Path="tests/DualSync.Tests/DualSync.Tests.csproj" />
   </Folder>
   <Folder Name="/tools/">

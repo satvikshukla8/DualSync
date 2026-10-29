@@ -234,8 +234,80 @@ var tests = new (string Name, Action Run)[]
         Directory.CreateDirectory(directory); var path = Path.Combine(directory, "settings.json");
         File.WriteAllText(path, JsonSerializer.Serialize(new AppSettings { SchemaVersion = 1, Current = new() { MasterMode = MasterMode.AppOnly, Speakers = [new() { Volume = 0.23, DelayMs = 42 }, new()] } }, SettingsStore.JsonOptions));
         var migrated = new SettingsStore(path).Load();
-        Check(migrated.SchemaVersion == 2 && migrated.Current.MasterMode == MasterMode.SourceEndpoint && !migrated.Current.LoopbackIncludesEndpointVolume, "Windows volume mode not migrated");
+        Check(migrated.SchemaVersion == 3 && migrated.Current.MasterMode == MasterMode.SourceEndpoint && !migrated.Current.LoopbackIncludesEndpointVolume, "Windows volume mode not migrated");
         Near(migrated.Current.Speakers[0].Volume, 0.23, 0); Near(migrated.Current.Speakers[0].DelayMs, 42, 0);
+    }),
+    ("Single EQ captures are independent and leave every non-EQ speaker setting intact", () =>
+    {
+        var original = new SpeakerSettings { Bands = Presets.Get("Music"), EqEnabled = false };
+        var library = new EqPresetLibrary(); library.SaveSingle(" Rock ", original);
+        original.Bands[0] = -12;
+        var target = new SpeakerSettings { DeviceId = "speaker-b", Volume = 0.23, Muted = true, DelayMs = 149.5, ChannelMode = ChannelMode.Custom, LeftMix = 0.3, RightMix = 0.9 };
+        var loaded = library.LoadSingle("ROCK"); var result = loaded.ApplyTo(target);
+        Check(result.Bands.SequenceEqual(Presets.Get("Music")) && !result.EqEnabled, "Saved EQ was changed or not restored");
+        Check((result with { Bands = target.Bands, EqEnabled = target.EqEnabled }) == target, "Applying EQ changed a non-EQ setting");
+        loaded.Bands[0] = 9; result.Bands[1] = -9;
+        Check(library.LoadSingle("rock").Bands.SequenceEqual(Presets.Get("Music")), "Loading shares saved band arrays");
+    }),
+    ("Dual EQ preserves distinct A and B curves without sharing their bands", () =>
+    {
+        var a = new SpeakerSettings { Bands = Presets.Get("Music"), EqEnabled = true };
+        var b = new SpeakerSettings { Bands = Presets.Get("Voice"), EqEnabled = false };
+        var library = new EqPresetLibrary(); library.SaveDual("Indie", a, b);
+        a.Bands[0] = b.Bands[0] = 12;
+        var pair = library.LoadDual("indie");
+        Check(pair.A.Bands.SequenceEqual(Presets.Get("Music")) && pair.B.Bands.SequenceEqual(Presets.Get("Voice")), "Sides were swapped or changed");
+        Check(pair.A.Enabled && !pair.B.Enabled, "Per-speaker enable flags were lost");
+        pair.A.Bands[0] = pair.B.Bands[0] = 0;
+        Check(library.LoadDual("Indie").B.Bands[0] == -6, "Dual load mutated the saved pair");
+        var snapshot = library.Duals; snapshot[0].A.Bands[0] = -12;
+        Check(library.LoadDual("Indie").A.Bands[0] == 2, "Snapshot exposes saved bands");
+    }),
+    ("EQ libraries replace names without duplicates and delete independently", () =>
+    {
+        var library = new EqPresetLibrary();
+        library.SaveSingle("Rock", new()); library.SaveSingle(" ROCK ", new() { Bands = Presets.Get("Music") });
+        library.SaveDual("Rock", new(), new());
+        Check(library.Singles.Length == 1 && library.Duals.Length == 1, "Names were not unique within each library");
+        Check(library.LoadSingle("rock").Bands[0] == 2, "Replacement failed");
+        library.DeleteSingle("rOcK"); Check(library.Singles.Length == 0 && library.Duals.Length == 1, "Delete affected the other library");
+        library.DeleteDual("ROCK"); Check(library.Duals.Length == 0, "Dual deletion failed");
+        Throws<ArgumentException>(() => library.SaveSingle("   ", new()));
+        Throws<ArgumentException>(() => library.SaveDual(new string('x', 81), new(), new()));
+        for (var i = 0; i < EqPresetLibrary.MaximumPresets; i++) library.SaveSingle($"EQ {i}", new());
+        Throws<InvalidOperationException>(() => library.SaveSingle("Overflow", new()));
+        library.SaveSingle("EQ 0", new() { EqEnabled = false });
+        Check(!library.LoadSingle("EQ 0").Enabled, "Full library prevented replacement");
+    }),
+    ("EQ libraries survive disk reload alongside full setup profiles", () =>
+    {
+        var library = new EqPresetLibrary();
+        library.SaveSingle("Rock", new() { Bands = Presets.Get("Music") });
+        library.SaveSingle("Pop", new() { Bands = Presets.Get("Movies") });
+        library.SaveDual("Indie", new() { Bands = Presets.Get("Music") }, new() { Bands = Presets.Get("Voice"), EqEnabled = false });
+        var store = new SettingsStore(Path.Combine(TestDirectory(), "settings.json"));
+        store.Save(new() { EqPresets = library.Singles.ToList(), DualEqPresets = library.Duals.ToList(), Profiles = [new() { Name = "Room", SourceId = "cable" }] });
+        var settings = store.Load(); var restored = new EqPresetLibrary(settings.EqPresets, settings.DualEqPresets);
+        Check(store.LoadWarning is null && settings.Profiles[0].SourceId == "cable", "Existing profile lost on save");
+        Check(restored.Singles.Length == 2 && restored.LoadSingle("Pop").Bands.SequenceEqual(Presets.Get("Movies")), "Single EQ did not persist");
+        var pair = restored.LoadDual("Indie");
+        Check(pair.A.Bands.SequenceEqual(Presets.Get("Music")) && pair.B.Bands.SequenceEqual(Presets.Get("Voice")) && !pair.B.Enabled, "Dual EQ did not persist");
+    }),
+    ("Schema 2 settings migrate without losing EQ or profiles", () =>
+    {
+        var path = Path.Combine(TestDirectory(), "settings.json");
+        File.WriteAllText(path, """{"SchemaVersion":2,"Current":{"Name":"Room","Speakers":[{"Bands":[3,2,1],"DelayMs":27},{"EqEnabled":false,"Volume":0.23}]},"Profiles":[{"Name":"Old setup"}]}""");
+        var store = new SettingsStore(path); var settings = store.Load();
+        Check(store.LoadWarning is null && settings.SchemaVersion == 3 && settings.EqPresets.Count == 0 && settings.DualEqPresets.Count == 0, "Migration failed");
+        Near(settings.Current.Speakers[0].Bands[0], 3, 0); Near(settings.Current.Speakers[0].DelayMs, 27, 0);
+        Check(!settings.Current.Speakers[1].EqEnabled && settings.Profiles[0].Name == "Old setup", "Migration changed existing settings");
+    }),
+    ("Malformed saved EQ entries are sanitized without discarding other settings", () =>
+    {
+        var settings = JsonSerializer.Deserialize<AppSettings>("""{"EqPresets":[null,{"Name":" "},{"Name":"Rock","Eq":{"Bands":[90,-90]}},{"Name":"rock"}],"DualEqPresets":[{"Name":"Pair","A":null,"B":{"Enabled":false,"Bands":null}}]}""")!.Sanitize();
+        Check(settings.EqPresets.Count == 1 && settings.EqPresets[0].Eq.Bands.Length == 10, "Invalid or duplicate entries survived");
+        Near(settings.EqPresets[0].Eq.Bands[0], 12, 0); Near(settings.EqPresets[0].Eq.Bands[1], -12, 0);
+        Check(settings.DualEqPresets[0].A.Enabled && !settings.DualEqPresets[0].B.Enabled && settings.DualEqPresets[0].B.Bands.All(b => b == 0), "Missing EQ data was not recovered");
     }),
     ("Cable detection accepts standard endpoints and excludes other VB-Audio products", () =>
     {

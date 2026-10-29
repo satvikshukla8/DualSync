@@ -1,0 +1,52 @@
+{
+  "version": 1,
+  "dependencies": {
+    "net10.0-windows7.0": {
+      "NAudio.Core": {
+        "type": "Transitive",
+        "resolved": "3.2.0",
+        "contentHash": "XmKfK+iJ9nGwQyMB412+d0CghABNwshFdO3ZRowQ7fDTOXggN9S7J69Dw70/z6DuyfhVdSgnS0FoBtUnwZRCEQ==",
+        "dependencies": {
+          "System.Numerics.Tensors": "9.0.0"
+        }
+      },
+      "NAudio.Wasapi": {
+        "type": "Transitive",
+        "resolved": "3.2.0",
+        "contentHash": "jkT7CTrkpea+2EPvmnKrFaiKibqR0PMsbqaMoe7IeX7Okr9WYF88p41RWRwxI1hg1b8FBPBjiOj7UL9H9S5DwQ==",
+        "dependencies": {
+          "NAudio.Core": "3.2.0"
+        }
+      },
+      "System.Numerics.Tensors": {
+        "type": "Transitive",
+        "resolved": "9.0.0",
+        "contentHash": "hyJB4UlpAi19Xr9AXzu2NuagKC4lPfHObNMEAA0HmqFz2rX7wKgzeYzO/jM/eBHDhnUGFFEjk5cOoJaxqg5J4A=="
+      },
+      "DualSync": {
+        "type": "Project",
+        "dependencies": {
+          "DualSync.Audio": "[0.1.0-alpha.5, )",
+          "DualSync.Setup": "[0.1.0-alpha.5, )"
+        }
+      },
+      "dualsync.audio": {
+        "type": "Project",
+        "dependencies": {
+          "DualSync.Core": "[0.1.0-alpha.5, )",
+          "NAudio.Wasapi": "[3.2.0, )"
+        }
+      },
+      "dualsync.core": {
+        "type": "Project"
+      },
+      "dualsync.setup": {
+        "type": "Project",
+        "dependencies": {
+          "DualSync.Core": "[0.1.0-alpha.5, )"
+        }
+      }
+    },
+    "net10.0-windows7.0/win-x64": {}
+  }
+}
