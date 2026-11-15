@@ -3,10 +3,10 @@
 ## Build and packaging
 
 - [ ] Current commit passes Windows CI from a fresh checkout (older alpha CI passed; verify this build separately).
-- [ ] Alpha 6 opens its main window after quitting the older instance (earlier alphas launched; alpha 6's duplicate-instance notice was verified).
+- [ ] Current alpha opens its main window after quitting the older instance (earlier alphas launched; alpha 6's duplicate-instance notice was verified).
 - [x] Package includes the app license, dependency notices, runtime notices, and setup documentation.
 - [x] App, window, and tray have an original icon; screenshots and setup guidance are prepared.
-- [x] Version, artifact name, changelog, and checksum agree for the local alpha 6 package.
+- [ ] Version, artifact name, changelog, and checksum agree for the current alpha package (alpha 6 was verified).
 - [x] Review signing options and document the actual signing status: unsigned, see signing.md.
 - [ ] Configure a trusted publisher identity and sign the build before claiming signed distribution.
 
@@ -17,6 +17,7 @@
 - [ ] Source-volume behavior is verified and documented by driver.
 - [ ] Device loss, reconnection, shutdown, and tray behavior pass.
 - [ ] One-hour playback completes with recorded resource and buffer observations.
+- [ ] Auto Sync measures stable queues during playback, recovers after pause/reconnect, and returns to manual control correctly on the owner's devices.
 - [x] Offer opt-in setup of standard VB-CABLE, with attribution, license links, package integrity checks, and visible vendor confirmation.
 - [ ] Test the opt-in cable installer on a clean Windows machine, including UAC denial, existing/disabled cable, restart, and removal.
 

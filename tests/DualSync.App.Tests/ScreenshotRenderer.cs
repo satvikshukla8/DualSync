@@ -47,6 +47,19 @@ internal static class ScreenshotRenderer
         model.Status = "UI preview · sample devices and queue values · audio is stopped";
         view.DataContext = model;
         Directory.CreateDirectory(destination);
+        Layout(1180, 900);
+        var autoToggle = Descendants<CheckBox>(view).Single(c => Equals(c.Content, "Auto Sync"));
+        autoToggle.IsChecked = true;
+        autoToggle.GetBindingExpression(System.Windows.Controls.Primitives.ToggleButton.IsCheckedProperty)!.UpdateSource();
+        view.UpdateLayout();
+        var delaySliders = Descendants<Slider>(view).Where(s => System.Windows.Automation.AutomationProperties.GetName(s).Contains("delay milliseconds")).ToArray();
+        if (!model.AutoSyncEnabled || delaySliders.Length != 2 || delaySliders.Any(s => s.IsEnabled))
+            throw new InvalidOperationException("Auto Sync toggle or manual-delay bindings failed.");
+        autoToggle.IsChecked = false;
+        autoToggle.GetBindingExpression(System.Windows.Controls.Primitives.ToggleButton.IsCheckedProperty)!.UpdateSource();
+        view.UpdateLayout();
+        if (model.AutoSyncEnabled || delaySliders.Any(s => !s.IsEnabled))
+            throw new InvalidOperationException("Switching Auto Sync off did not unlock the delay sliders.");
         Capture("dashboard.png", 1180, 900);
         Capture("dashboard-compact.png", 860, 760);
         var tabs = (TabControl)view.FindName("WorkspaceTabs");

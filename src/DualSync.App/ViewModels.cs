@@ -41,6 +41,7 @@ public sealed class SpeakerViewModel : Observable
     private string telemetry = "Stopped";
     private double meter;
     private double? queueMilliseconds;
+    private bool manualDelayEnabled = true;
     public sealed record ChannelOption(ChannelMode Value, string Label)
     {
         public override string ToString() => Label;
@@ -89,7 +90,13 @@ public sealed class SpeakerViewModel : Observable
             settings = settings with { DelayMs = delay }; Change(); NotifyTiming();
         }
     }
-    public void AdjustDelay(int milliseconds) => DelayMs += milliseconds;
+    public void AdjustDelay(int milliseconds) { if (ManualDelayEnabled) DelayMs += milliseconds; }
+    public bool ManualDelayEnabled
+    {
+        get => manualDelayEnabled;
+        set { if (Set(ref manualDelayEnabled, value)) { NotifyTiming(); Notify(nameof(DelayHint)); } }
+    }
+    public string DelayHint => ManualDelayEnabled ? "Add delay to the speaker you hear first." : "Auto Sync controls this delay. Switch it off to adjust manually.";
     public ChannelMode ChannelMode
     {
         get => settings.ChannelMode;
@@ -126,8 +133,8 @@ public sealed class SpeakerViewModel : Observable
     public string QueueDisplay => queueMilliseconds is double queue ? $"{queue:0.0} ms" : "—";
     public string AddedDelayDisplay => $"{DelayMs:0.0} ms";
     public string FinalBufferDisplay => queueMilliseconds is double queue ? $"{queue + DelayMs:0.0} ms" : "—";
-    public bool CanDecreaseDelay => DelayMs > 0;
-    public bool CanIncreaseDelay => DelayMs < 500;
+    public bool CanDecreaseDelay => ManualDelayEnabled && DelayMs > 0;
+    public bool CanIncreaseDelay => ManualDelayEnabled && DelayMs < 500;
     public void UpdateQueue(int? frames)
     {
         queueMilliseconds = frames is int value ? Math.Max(0, value) * 1000.0 / AudioEngine.SampleRate : null;
@@ -166,6 +173,11 @@ public sealed class ShellViewModel : Observable
     private string diagnostic = "Start audio to view buffer and signal diagnostics.";
     private bool running, busy;
     private bool applyingDualEq;
+    private bool applyingAutoSync;
+    private readonly BufferAutoSync autoSync = new(AudioEngine.SampleRate);
+    private string autoSyncStatus = "Manual delay";
+    private string autoSyncDetails = "Turn on to average both queues for 3 seconds and set their delay automatically.";
+    private double autoSyncProgress;
     public EqPresetLibrary EqLibrary { get; }
     public SavedEqViewModel DualEq { get; }
     public ObservableCollection<AudioDevice> Devices { get; } = [];
@@ -179,6 +191,7 @@ public sealed class ShellViewModel : Observable
         A = new("Speaker A", "Your first output", profile.Speakers[0], Devices);
         B = new("Speaker B", "Your second output", profile.Speakers[1], Devices);
         A.Changed += SpeakerChanged; B.Changed += SpeakerChanged;
+        ResetAutoSync();
         EqLibrary = new(eqPresets, dualEqPresets);
         A.SavedEq = CreateSinglePicker(A); B.SavedEq = CreateSinglePicker(B);
         DualEq = new(name =>
@@ -201,7 +214,51 @@ public sealed class ShellViewModel : Observable
         }, message => Status = message);
         RefreshEqLibraries();
     }
-    private void SpeakerChanged() { if (!applyingDualEq) Changed?.Invoke("Speaker"); }
+    private void SpeakerChanged() { if (!applyingDualEq && !applyingAutoSync) Changed?.Invoke("Speaker"); }
+    public bool AutoSyncEnabled
+    {
+        get => profile.AutoSyncEnabled;
+        set
+        {
+            if (value == profile.AutoSyncEnabled) return;
+            profile = profile with { AutoSyncEnabled = value }; ResetAutoSync(); Notify();
+            Changed?.Invoke(nameof(AutoSyncEnabled));
+        }
+    }
+    public string AutoSyncStatus { get => autoSyncStatus; private set => Set(ref autoSyncStatus, value); }
+    public string AutoSyncDetails { get => autoSyncDetails; private set => Set(ref autoSyncDetails, value); }
+    public double AutoSyncProgress { get => autoSyncProgress; private set => Set(ref autoSyncProgress, value); }
+    public void ResetAutoSync()
+    {
+        autoSync.Reset(); AutoSyncProgress = 0;
+        A.ManualDelayEnabled = B.ManualDelayEnabled = !AutoSyncEnabled;
+        AutoSyncStatus = !AutoSyncEnabled ? "Manual delay" : Running ? "Waiting for buffers to settle…" : "Start audio to measure";
+        AutoSyncDetails = AutoSyncEnabled ? "Averages 3 seconds at a time. Current delays stay until a stable measurement is ready."
+            : "Turn on to average both queues for 3 seconds and set their delay automatically.";
+    }
+    public void ObserveAutoSync(BufferSyncSample sample)
+    {
+        if (!AutoSyncEnabled || !Running || Busy) return;
+        var reading = autoSync.Observe(sample); AutoSyncProgress = reading.Progress;
+        AutoSyncStatus = reading.State switch
+        {
+            BufferSyncState.WaitingForAudio => "Waiting for audio · play something to measure",
+            BufferSyncState.Settling => "Waiting for buffers to settle…",
+            BufferSyncState.Unstable => "Waiting for stable buffers…",
+            BufferSyncState.Measuring => $"Averaging queues · {reading.Progress / 100 * 3:0.0} / 3.0 s",
+            _ => "Buffer averages aligned · continuing to check"
+        };
+        if (reading.Measurement is not { } result) return;
+        // Ignore sub-millisecond changes so queue jitter does not constantly move the delay.
+        if (Math.Abs(A.DelayMs - result.DelayA) >= 1 || Math.Abs(B.DelayMs - result.DelayB) >= 1)
+        {
+            applyingAutoSync = true;
+            try { A.DelayMs = result.DelayA; B.DelayMs = result.DelayB; }
+            finally { applyingAutoSync = false; }
+            Changed?.Invoke("AutoSyncDelay");
+        }
+        AutoSyncDetails = $"Average A {result.AverageA:0.0} ms · B {result.AverageB:0.0} ms → added delay A {A.DelayMs:0.0} ms / B {B.DelayMs:0.0} ms";
+    }
     private SavedEqViewModel CreateSinglePicker(SpeakerViewModel speaker) => new(name =>
     {
         speaker.ApplyEq(EqLibrary.LoadSingle(name));
@@ -235,8 +292,8 @@ public sealed class ShellViewModel : Observable
     public bool IncludesVolume { get => profile.LoopbackIncludesEndpointVolume; set { profile = profile with { LoopbackIncludesEndpointVolume = value }; Notify(); Changed?.Invoke(nameof(IncludesVolume)); } }
     public string Status { get => status; set => Set(ref status, value); }
     public string Diagnostic { get => diagnostic; set => Set(ref diagnostic, value); }
-    public bool Running { get => running; set { Set(ref running, value); Notify(nameof(CanSelectDevices)); Notify(nameof(PlaybackLabel)); } }
-    public bool Busy { get => busy; set { Set(ref busy, value); Notify(nameof(CanSelectDevices)); Notify(nameof(CanOperate)); } }
+    public bool Running { get => running; set { if (Set(ref running, value)) ResetAutoSync(); Notify(nameof(CanSelectDevices)); Notify(nameof(PlaybackLabel)); } }
+    public bool Busy { get => busy; set { if (Set(ref busy, value)) ResetAutoSync(); Notify(nameof(CanSelectDevices)); Notify(nameof(CanOperate)); } }
     public bool CanSelectDevices => !running && !busy;
     public bool CanOperate => !busy;
     public string PlaybackLabel => Running ? "Stop audio" : "Start audio";
@@ -245,5 +302,6 @@ public sealed class ShellViewModel : Observable
     {
         profile = value.Sanitize(); master = profile.MasterVolume * 100;
         A.Load(profile.Speakers[0]); B.Load(profile.Speakers[1]); Notify(string.Empty);
+        ResetAutoSync();
     }
 }

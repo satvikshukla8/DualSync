@@ -1,6 +1,6 @@
 # Signing and Windows download warnings
 
-The alpha 6 DualSync executable is **unsigned**. The application icon and ZIP checksum do not establish publisher identity. The optional VB-CABLE package has its own vendor signatures, which the setup helper verifies; those signatures do not sign DualSync.
+The current DualSync alpha executable is **unsigned**. The application icon and ZIP checksum do not establish publisher identity. The optional VB-CABLE package has its own vendor signatures, which the setup helper verifies; those signatures do not sign DualSync.
 
 For broader distribution, use a consistent publisher identity backed by a trusted code-signing provider. Microsoft documents [Artifact Signing](https://learn.microsoft.com/en-us/windows/apps/package-and-deploy/smartscreen-reputation) as an option for distribution outside the Store. Enrollment requires identity validation. No signing account, paid service, or certificate has been created for this project.
 

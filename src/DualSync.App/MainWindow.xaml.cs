@@ -20,6 +20,8 @@ public partial class MainWindow : Window
     private AppSettings settings;
     private readonly DispatcherTimer saveTimer = new() { Interval = TimeSpan.FromMilliseconds(400) };
     private readonly DispatcherTimer monitor = new() { Interval = TimeSpan.FromSeconds(1) };
+    private readonly DispatcherTimer syncMonitor = new(DispatcherPriority.Background) { Interval = TimeSpan.FromMilliseconds(50) };
+    private readonly Stopwatch syncClock = Stopwatch.StartNew();
     private Forms.NotifyIcon? tray;
     private System.Drawing.Icon? trayIcon;
     private bool loading = true, wanted, quitting, closed, ticking, shutdownStarted;
@@ -49,6 +51,11 @@ public partial class MainWindow : Window
         ProfileName.Text = settings.Current.Name;
         UpdateProfileNames();
         model.Changed += SettingsChanged;
+        model.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName is nameof(ShellViewModel.AutoSyncEnabled) or nameof(ShellViewModel.Running) or nameof(ShellViewModel.Busy) or "")
+                UpdateAutoSyncTimer();
+        };
         saveTimer.Tick += (_, _) => { saveTimer.Stop(); Save(); };
         engine.SourceVolumeChanged += value => Dispatcher.BeginInvoke(() =>
         { if (model.MasterModeIndex == (int)MasterMode.SourceEndpoint) model.MirrorSourceVolume(value); });
@@ -60,9 +67,10 @@ public partial class MainWindow : Window
             finally { model.Running = false; model.Busy = false; nextRetry = DateTime.UtcNow.AddSeconds(5); }
         });
         monitor.Tick += async (_, _) => await MonitorAsync();
+        syncMonitor.Tick += (_, _) => SampleAutoSync();
         Loaded += async (_, _) =>
         {
-            await RefreshDevicesAsync(); CreateTray(); loading = false; monitor.Start();
+            await RefreshDevicesAsync(); CreateTray(); loading = false; monitor.Start(); UpdateAutoSyncTimer();
             if (store.LoadWarning is not null) model.Status = store.LoadWarning;
             if (model.SourceId is null) WorkspaceTabs.SelectedItem = SetupTab;
             if (settings.StartMinimized) Hide();
@@ -145,11 +153,21 @@ public partial class MainWindow : Window
                 model.Devices.Clear(); foreach (var device in devices) model.Devices.Add(device);
                 model.Load(snapshot);
             }
-            finally { loading = wasLoading; }
+            finally { loading = wasLoading; UpdateAutoSyncTimer(); }
             if (engine.IsRunning && selected.Any(id => id is null || !devices.Any(d => d.Available && d.Id == id)))
                 await StopAsync(true);
         }
         catch (Exception ex) { lastError = ex.Message; model.Status = "Could not refresh audio devices: " + ex.Message; Log(ex.ToString()); }
+    }
+    private void UpdateAutoSyncTimer() => syncMonitor.IsEnabled = !loading && !shutdownStarted && !closed
+        && model.AutoSyncEnabled && model.Running && !model.Busy;
+    private void SampleAutoSync()
+    {
+        if (!engine.IsRunning) { model.ResetAutoSync(); return; }
+        var stats = engine.Statistics();
+        if (stats.Length != 2 || stats[0].Speaker != 0 || stats[1].Speaker != 1) { model.ResetAutoSync(); return; }
+        model.ObserveAutoSync(new(syncClock.Elapsed, engine.CapturedFrames, stats[0].BufferedFrames, stats[1].BufferedFrames,
+            stats[0].UnderrunFrames, stats[1].UnderrunFrames, stats[0].OverrunFrames, stats[1].OverrunFrames));
     }
     private async Task MonitorAsync()
     {
@@ -175,6 +193,7 @@ public partial class MainWindow : Window
             }
             model.Diagnostic = $"Engine: {(engine.IsRunning ? "playing" : "stopped")}   Capture: {engine.CapturedFrames:N0} frames\nSource Windows volume: {engine.SourceVolume:P0} · muted: {engine.SourceMuted}\n48,000 Hz · float stereo · shared-mode outputs · 80 ms output buffer + 5 ms peak protection\n" +
                 string.Join("\n", stats.Select(s => $"Speaker {(s.Speaker == 0 ? "A" : "B")}: queue {s.BufferedFrames / 48.0:0.#} ms | missing {s.UnderrunFrames:N0} | dropped {s.OverrunFrames:N0} | clamped {s.LimitedSamples:N0}")) +
+                "\nSync: " + model.AutoSyncStatus + "\n" + model.AutoSyncDetails +
                 (lastError is null ? "" : "\nLast error: " + lastError);
             if (wanted && !engine.IsRunning && !model.Busy && DateTime.UtcNow >= nextRetry)
             {
@@ -218,7 +237,7 @@ public partial class MainWindow : Window
         if (!quitting && TrayPreference.IsChecked == true) { Hide(); return; }
         if (shutdownStarted) return;
         shutdownStarted = true;
-        quitting = true; monitor.Stop(); saveTimer.Stop(); wanted = false; Save();
+        quitting = true; monitor.Stop(); syncMonitor.Stop(); saveTimer.Stop(); wanted = false; Save();
         while (model.Busy) await Task.Delay(25);
         try { await engine.DisposeAsync(); } catch (Exception ex) { Log(ex.ToString()); }
         tray?.Dispose(); trayIcon?.Dispose(); closed = true; _ = Dispatcher.BeginInvoke(Close);
@@ -300,7 +319,7 @@ public partial class MainWindow : Window
     }
     private void CopyDiagnostics_Click(object sender, RoutedEventArgs e)
     {
-        var report = new StringBuilder("DualSync 0.1.0-alpha.6\n").AppendLine(Environment.OSVersion.ToString()).AppendLine(model.Diagnostic);
+        var report = new StringBuilder("DualSync 0.1.0-alpha.7\n").AppendLine(Environment.OSVersion.ToString()).AppendLine(model.Diagnostic);
         foreach (var device in model.Devices) report.AppendLine(device.ToString() + " | " + device.Id);
         report.AppendLine("Profile:\n" + System.Text.Json.JsonSerializer.Serialize(model.Snapshot, SettingsStore.JsonOptions));
         Clipboard.SetText(report.ToString()); model.Status = "Diagnostic report copied. It includes device names, IDs, and audio settings.";

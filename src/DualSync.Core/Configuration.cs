@@ -36,6 +36,7 @@ public sealed record AudioProfile
     public MasterMode MasterMode { get; init; } = MasterMode.SourceEndpoint;
     // True only after the user has verified that source volume already scales loopback samples.
     public bool LoopbackIncludesEndpointVolume { get; init; }
+    public bool AutoSyncEnabled { get; init; }
     public SpeakerSettings[] Speakers { get; init; } = [new(), new()];
 
     public AudioProfile Sanitize() => this with

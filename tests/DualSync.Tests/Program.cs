@@ -6,6 +6,86 @@ using DualSync.Core;
 
 var tests = new (string Name, Action Run)[]
 {
+    ("Auto Sync averages paired queues for three seconds after warmup", () =>
+    {
+        var sync = new BufferAutoSync(); BufferSyncReading reading = default;
+        for (var i = 0; i <= 80; i++)
+        {
+            reading = sync.Observe(new(TimeSpan.FromMilliseconds(i * 50), i * 2400L, i % 2 == 0 ? 480 : 960, 1440));
+            if (i < 80) Check(reading.Measurement is null, "Delay applied before a complete measurement window");
+        }
+        var result = reading.Measurement ?? throw new InvalidOperationException("No stable measurement");
+        Near(result.AverageA, (31 * 10.0 + 30 * 20.0) / 61, 0.000001); Near(result.AverageB, 30, 0);
+        Near(result.DelayA, 15.1, 0); Near(result.DelayB, 0, 0);
+        Check(result.Samples == 61 && reading.Progress == 100, "Wrong paired sample count or progress");
+    }),
+    ("Auto Sync delays the shorter queue and respects equal and maximum queues", () =>
+    {
+        foreach (var (a, b, delayA, delayB) in new[] { (960, 480, 0.0, 10.0), (0, 24000, 500.0, 0.0), (24000, 0, 0.0, 500.0), (480, 480, 0.0, 0.0) })
+        {
+            var sync = new BufferAutoSync(); BufferSyncMeasurement? result = null;
+            for (var i = 0; i <= 80; i++) result = sync.Observe(new(TimeSpan.FromMilliseconds(i * 50), i * 2400L, a, b)).Measurement ?? result;
+            Check(result is not null, "No result for a valid queue pair");
+            Near(result!.DelayA, delayA, 0); Near(result.DelayB, delayB, 0);
+            Near(result.AverageA + result.DelayA, result.AverageB + result.DelayB, 0.1);
+        }
+    }),
+    ("Auto Sync discards partial windows on pauses, dropouts, restarts, and sampling gaps", () =>
+    {
+        foreach (var disruption in new[] { "pause", "missing", "dropped", "restart", "gap" })
+        {
+            var sync = new BufferAutoSync();
+            for (var i = 0; i <= 60; i++) sync.Observe(new(TimeSpan.FromMilliseconds(i * 50), i * 2400L, 480, 960));
+            var at = disruption == "gap" ? 4.0 : 3.05;
+            var captured = disruption == "pause" ? 60 * 2400L : disruption == "restart" ? 0 : 61 * 2400L;
+            var missing = disruption == "missing" ? 48 : 0; var dropped = disruption == "dropped" ? 48 : 0;
+            var disrupted = sync.Observe(new(TimeSpan.FromSeconds(at), captured, 480, 960, MissingA: missing, DroppedB: dropped));
+            Check(disrupted.Measurement is null, "Disruption produced a measurement");
+            BufferSyncMeasurement? result = null;
+            for (var i = 1; i <= 80; i++)
+            {
+                var reading = sync.Observe(new(TimeSpan.FromSeconds(at) + TimeSpan.FromMilliseconds(i * 50), captured + i * 2400L, 480, 960, MissingA: missing, DroppedB: dropped));
+                if (i < 80) Check(reading.Measurement is null, "Partial pre-disruption window survived");
+                result = reading.Measurement ?? result;
+            }
+            Check(result is not null, "Did not recover after " + disruption);
+        }
+    }),
+    ("Auto Sync rejects undersampled and invalid windows", () =>
+    {
+        var sync = new BufferAutoSync();
+        for (var i = 0; i <= 100; i++)
+            Check(sync.Observe(new(TimeSpan.FromMilliseconds(i * 100), i * 4800L, 480, 960)).Measurement is null, "Undersampled window was accepted");
+        foreach (var bad in new[] { new BufferSyncSample(TimeSpan.Zero, 0, -1, 0), new(TimeSpan.Zero, 0, 0, 24001), new(TimeSpan.Zero, -1, 0, 0), new(TimeSpan.Zero, 0, 0, 0, MissingA: -1) })
+            Check(sync.Observe(bad).State == BufferSyncState.Unstable, "Invalid input not rejected");
+        Throws<ArgumentOutOfRangeException>(() => new BufferAutoSync(0));
+    }),
+    ("Repeated Auto Sync windows recompute a bounded delay without accumulating", () =>
+    {
+        var sync = new BufferAutoSync(); var results = new List<BufferSyncMeasurement>();
+        for (var i = 0; i <= 280; i++)
+        {
+            var reading = sync.Observe(new(TimeSpan.FromMilliseconds(i * 50), i * 2400L, 576, 960));
+            if (reading.Measurement is { } result) results.Add(result);
+        }
+        Check(results.Count >= 4 && results.All(r => r.DelayA == 8 && r.DelayB == 0), "Repeated measurement accumulated delay");
+    }),
+    ("Auto Sync resets discard measurements and duplicate timestamps cannot fake a window", () =>
+    {
+        var sync = new BufferAutoSync();
+        for (var i = 0; i < 100; i++) Check(sync.Observe(new(TimeSpan.Zero, i * 2400L, 480, 960)).Measurement is null, "Duplicate timestamp contributed to a window");
+        sync.Reset();
+        for (var i = 0; i < 80; i++) Check(sync.Observe(new(TimeSpan.FromMilliseconds(i * 50), i * 2400L, 480, 960)).Measurement is null, "Reset retained earlier measurements");
+    }),
+    ("Auto Sync preference persists with profiles and defaults off for existing settings", () =>
+    {
+        var store = new SettingsStore(Path.Combine(TestDirectory(), "settings.json"));
+        store.Save(new() { Current = new() { AutoSyncEnabled = true, Speakers = [new() { DelayMs = 8 }, new()] }, Profiles = [new() { Name = "Automatic", AutoSyncEnabled = true }] });
+        var loaded = store.Load();
+        Check(loaded.Current.AutoSyncEnabled && loaded.Profiles[0].AutoSyncEnabled && loaded.Current.Speakers[0].DelayMs == 8, "Automatic mode or applied delay did not persist");
+        var legacy = JsonSerializer.Deserialize<AppSettings>("""{"SchemaVersion":3,"Current":{"Speakers":[{"DelayMs":23},{"DelayMs":27}]}}""")!.Sanitize();
+        Check(!legacy.Current.AutoSyncEnabled && legacy.Current.Speakers[0].DelayMs == 23 && legacy.Current.Speakers[1].DelayMs == 27, "Existing manual settings changed");
+    }),
     ("Peaking filters are stable over all bands, rates, and gain limits", () =>
     {
         foreach (var rate in new[] { 44100, 48000, 96000 })

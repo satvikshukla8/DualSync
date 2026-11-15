@@ -149,9 +149,10 @@
           <TextBlock Text="Added delay" FontWeight="SemiBold" VerticalAlignment="Center"/>
         </DockPanel>
         <Slider Minimum="0" Maximum="500" TickFrequency="1" IsSnapToTickEnabled="True" Value="{Binding DelayMs}"
+                IsEnabled="{Binding ManualDelayEnabled}"
                 Foreground="{Binding AccentColor}"
                 SmallChange="1" LargeChange="10" AutomationProperties.Name="{Binding Title, StringFormat={}{0} delay milliseconds}"/>
-        <TextBlock Text="Add delay to the speaker you hear first." Style="{StaticResource Muted}" FontSize="12"/>
+        <TextBlock Text="{Binding DelayHint}" Style="{StaticResource Muted}" FontSize="12"/>
 
         <TextBlock Text="Left / right routing" FontWeight="SemiBold" Margin="0,12,0,0"/>
         <ComboBox ItemsSource="{Binding ChannelOptions}" DisplayMemberPath="Label" SelectedValuePath="Value" SelectedValue="{Binding ChannelMode}"

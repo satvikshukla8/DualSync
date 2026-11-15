@@ -61,6 +61,8 @@ Each output owns a buffer capped at 500 ms of source frames. Overflow drops inco
 
 Static speaker delay is independent of the buffer. Device clocks can drift, while Bluetooth transport introduces changing latency and scheduling jitter. Long-session testing will determine whether a shared source timeline and adaptive resampling are needed. The initial backend relies on Windows for format conversion and does not implement adaptive clock correction.
 
+Optional [Auto Sync](auto-sync.md) samples paired queue statistics on a 50 ms desktop timer, outside the audio callbacks. After one second of settling, a three-second window with at least 40 samples computes each queue's average. The larger average is the target; each added delay is the target minus its own average, rounded to 0.1 ms. A 1 ms deadband avoids changes for small fluctuations. Each accepted pair replaces the prior delays in one engine update. Missing/dropped frames, pauses, counter resets, and gaps over 250 ms discard the partial window. The timer stops when automatic mode is off, playback stops, or the app is busy. This observes application queues and does not estimate transport latency or provide clock synchronization.
+
 ## Settings and safety boundaries
 
 Profiles identify endpoints by stable Windows IDs and store processing parameters separately from the engine. Settings use a schema-versioned JSON file, atomic replacement, numeric validation, and recovery copies for unreadable configurations.

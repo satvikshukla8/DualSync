@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.1.0-alpha.7 — 2026-11-15
+
+- Added optional Auto Sync with paired 20 Hz queue samples and three-second averaging windows.
+- Recompute both delays from scratch, delay the shorter average queue, and ignore changes under 1 ms.
+- Discard partial measurements on pauses, restarts, underruns, drops, and sampling stalls.
+- Show progress and average/result details, lock manual delay controls while enabled, and retain delays when switched off.
+- Persist the mode in full setup profiles while keeping EQ preset loads independent.
+- Added seven core and four app regression checks, bringing the suite to 49 checks.
+
+Auto Sync aligns application queue averages. It does not measure Bluetooth/device or acoustic latency. Physical playback acceptance is still pending.
+
 ## 0.1.0-alpha.6 — 2026-11-15
 
 - Put source and speaker controls first, with compact dropdowns for dual EQ presets and full setup profiles below them.

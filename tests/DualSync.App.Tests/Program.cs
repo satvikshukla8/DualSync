@@ -14,6 +14,59 @@ internal static class Program
     {
         var tests = new (string Name, Action Run)[]
         {
+            ("Auto Sync replaces manual delays together and preserves every other setting", () =>
+            {
+                var shell = CreateShell(); shell.AutoSyncEnabled = true; shell.Running = true;
+                var before = shell.Snapshot; var updates = 0;
+                shell.Changed += property =>
+                {
+                    if (property != "AutoSyncDelay") return;
+                    updates++; Check(shell.A.DelayMs == 8 && shell.B.DelayMs == 0, "Audio observed a half-applied delay pair");
+                };
+                for (var i = 0; i <= 80; i++) shell.ObserveAutoSync(new(TimeSpan.FromMilliseconds(i * 50), i * 2400L, 576, 960));
+                Check(updates == 1, "A stable window did not apply exactly one complete update");
+                Check(SameSpeaker(shell.A.Snapshot with { DelayMs = before.Speakers[0].DelayMs }, before.Speakers[0])
+                    && SameSpeaker(shell.B.Snapshot with { DelayMs = before.Speakers[1].DelayMs }, before.Speakers[1]), "Auto Sync changed EQ, gain, routing, mute, or devices");
+                Check(shell.AutoSyncDetails.Contains("12.0") && shell.AutoSyncDetails.Contains("20.0"), "Average results are not shown");
+                shell.AutoSyncEnabled = false;
+                Check(shell.A.ManualDelayEnabled && shell.B.ManualDelayEnabled && shell.A.DelayMs == 8 && shell.B.DelayMs == 0, "Switching off changed delays or left manual controls locked");
+                shell.A.AdjustDelay(1); Check(shell.A.DelayMs == 9, "Manual fine adjustment did not resume");
+            }),
+            ("Auto Sync ignores small jitter and manual step commands while enabled", () =>
+            {
+                var shell = CreateShell(); shell.A.DelayMs = 8; shell.B.DelayMs = 0;
+                shell.AutoSyncEnabled = true; shell.Running = true; var updates = 0;
+                shell.Changed += property => { if (property == "AutoSyncDelay") updates++; };
+                shell.A.DelayStepCommand.Execute("1");
+                Check(shell.A.DelayMs == 8 && !shell.A.CanIncreaseDelay && !shell.A.CanDecreaseDelay && !shell.B.ManualDelayEnabled, "Manual steps were allowed in automatic mode");
+                for (var i = 0; i <= 280; i++) shell.ObserveAutoSync(new(TimeSpan.FromMilliseconds(i * 50), i * 2400L, 576, 984));
+                Check(updates == 0 && shell.A.DelayMs == 8 && shell.B.DelayMs == 0, "Sub-millisecond jitter moved the delay");
+            }),
+            ("Auto Sync cancellation and stop/restart discard partial measurements", () =>
+            {
+                var shell = CreateShell(); shell.AutoSyncEnabled = true; shell.Running = true;
+                for (var i = 0; i <= 60; i++) shell.ObserveAutoSync(new(TimeSpan.FromMilliseconds(i * 50), i * 2400L, 480, 960));
+                shell.AutoSyncEnabled = false;
+                for (var i = 61; i <= 100; i++) shell.ObserveAutoSync(new(TimeSpan.FromMilliseconds(i * 50), i * 2400L, 480, 960));
+                Check(shell.A.DelayMs == 23 && shell.B.DelayMs == 41, "Cancelled measurement changed manual delays");
+                shell.AutoSyncEnabled = true; shell.Running = false;
+                for (var i = 0; i <= 80; i++) shell.ObserveAutoSync(new(TimeSpan.FromMilliseconds(i * 50), i * 2400L, 480, 960));
+                Check(shell.A.DelayMs == 23, "Stopped playback applied a measurement");
+                shell.Running = true;
+                for (var i = 0; i < 80; i++) shell.ObserveAutoSync(new(TimeSpan.FromMilliseconds(i * 50), i * 2400L, 480, 960));
+                Check(shell.A.DelayMs == 23 && shell.AutoSyncProgress < 100, "Restart reused an old window");
+                shell.ObserveAutoSync(new(TimeSpan.FromSeconds(4), 80 * 2400L, 480, 960));
+                Check(shell.A.DelayMs == 10 && shell.B.DelayMs == 0, "Restart did not complete a fresh window");
+            }),
+            ("Full setup loads restore Auto Sync mode while EQ preset loads preserve it", () =>
+            {
+                var shell = CreateShell(); shell.A.SavedEq.Name = "Rock"; shell.A.SavedEq.SaveCommand.Execute(null);
+                shell.Load(shell.Snapshot with { AutoSyncEnabled = true });
+                Check(shell.AutoSyncEnabled && !shell.A.ManualDelayEnabled && !shell.B.ManualDelayEnabled, "Full setup did not restore automatic mode");
+                shell.A.SavedEq.LoadCommand.Execute(null);
+                Check(shell.AutoSyncEnabled, "EQ load changed automatic mode");
+                shell.Load(new()); Check(!shell.AutoSyncEnabled && shell.A.ManualDelayEnabled, "Manual full setup did not unlock delay controls");
+            }),
             ("Single EQ picker saves for either speaker and applies only on Load", () =>
             {
                 var shell = CreateShell(); var originalB = shell.B.Snapshot;

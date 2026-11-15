@@ -4,7 +4,7 @@
 
 Run `./scripts/build.ps1` to restore locked dependencies, build all projects, and execute the test program. The test runner exits with a nonzero code on failure; `dotnet test` is not the entry point for this dependency-free test harness.
 
-The 33 core tests cover:
+The 40 core tests cover:
 
 - Biquad stability across supported band centers, sample rates, and gain limits.
 - Analytical and measured sine-wave frequency response, without fixed attenuation.
@@ -19,8 +19,9 @@ The 33 core tests cover:
 - Managed allocations in steady-state DSP processing.
 - Cable identification, download integrity, safe extraction, license preservation, and cancellation.
 - Single and dual EQ snapshot isolation, settings preservation, disk reload, replacement, deletion, limits, malformed entries, and migration.
+- Auto Sync averages, direction, range limits, repeated windows, pauses/dropouts/restarts, sparse sampling, invalid inputs, and preference persistence.
 
-Five Windows app tests exercise cross-speaker EQ loading, batched dual loading, shared-list updates, full setup independence, and compiled WPF save/load bindings at a compact panel width. They also verify that styled EQ sliders retain their numeric range and live band binding. These tests do not open audio devices or change Windows settings.
+Nine Windows app tests exercise cross-speaker EQ loading, batched dual loading, shared-list updates, full setup independence, and compiled WPF save/load bindings at a compact panel width. Auto Sync checks cover batched delay application without changing other settings, the 1 ms deadband, manual locks, cancellation/restart, and profile/EQ independence. Styled EQ sliders retain their numeric range and live band binding. The packaging preview also verifies the actual Auto Sync toggle and manual-slider bindings. These tests do not open audio devices or change Windows settings.
 
 Passing `--screenshots docs/assets` to the built app test runner renders the actual workspace XAML with sample device names and synthetic queue values. Every preview is labelled as such. The renderer excludes event handlers and app startup, so it cannot start playback, install a cable, or modify user settings. Packaging runs this renderer and includes the resulting images. This checks presentation without claiming hardware playback.
 
@@ -69,6 +70,7 @@ Record the source and speaker names, Windows build, profile, and test duration. 
 | Gain/headroom | Boost bands gradually and inspect clamp counters | Level remains bounded; reduce gain if clamping persists |
 | Channel routing | Play a known left/right test file; select Left, Right, Mono, Custom | Correct signals appear at each output |
 | Static delay | Use percussive audio and add 1–10 ms to the earlier speaker | A useful steady alignment can be found |
+| Auto Sync | Enable during playback, watch three-second measurements, pause/resume the source, then turn off | Shorter average queue receives delay; no accumulation; incomplete windows keep prior delays; manual controls unlock when off |
 | Profiles | Save, rename, load, close, and restart | Device IDs and individual parameters persist |
 | Custom EQ presets | Save different curves from A and B, load each on either side, replace one, then restart | The chosen EQ loads on that side; other audio settings and saved curves remain intact |
 | Dual EQ presets | Save two distinct curves as a pair, change both, then load the pair during playback | Both original curves and enabled states return to their original sides; volume, routing, and delay stay the same |

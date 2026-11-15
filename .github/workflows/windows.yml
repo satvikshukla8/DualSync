@@ -21,8 +21,8 @@ jobs:
         run: ./scripts/build.ps1 -Package
       - uses: actions/upload-artifact@v7
         with:
-          name: DualSync-0.1.0-alpha.6-win-x64
+          name: DualSync-0.1.0-alpha.7-win-x64
           path: |
-            artifacts/DualSync-0.1.0-alpha.6-win-x64.zip
-            artifacts/DualSync-0.1.0-alpha.6-win-x64.zip.sha256
+            artifacts/DualSync-0.1.0-alpha.7-win-x64.zip
+            artifacts/DualSync-0.1.0-alpha.7-win-x64.zip.sha256
           retention-days: 14
