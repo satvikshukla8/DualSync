@@ -21,6 +21,7 @@ public partial class MainWindow : Window
     private readonly DispatcherTimer saveTimer = new() { Interval = TimeSpan.FromMilliseconds(400) };
     private readonly DispatcherTimer monitor = new() { Interval = TimeSpan.FromSeconds(1) };
     private Forms.NotifyIcon? tray;
+    private System.Drawing.Icon? trayIcon;
     private bool loading = true, wanted, quitting, closed, ticking, shutdownStarted;
     private int ticks;
     private DateTime nextRetry;
@@ -39,6 +40,8 @@ public partial class MainWindow : Window
         store = new(Path.Combine(DataDirectory, "settings.json")); settings = store.Load();
         model = new(settings.Current, settings.EqPresets, settings.DualEqPresets); DataContext = model;
         InitializeComponent();
+        MaxHeight = Math.Max(480, SystemParameters.WorkArea.Height - 24);
+        MinHeight = Math.Min(MinHeight, MaxHeight); Height = Math.Min(Height, MaxHeight);
         TrayPreference.IsChecked = settings.MinimizeToTray;
         StartMinimizedPreference.IsChecked = settings.StartMinimized;
         using (var key = Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Run"))
@@ -61,6 +64,7 @@ public partial class MainWindow : Window
         {
             await RefreshDevicesAsync(); CreateTray(); loading = false; monitor.Start();
             if (store.LoadWarning is not null) model.Status = store.LoadWarning;
+            if (model.SourceId is null) WorkspaceTabs.SelectedItem = SetupTab;
             if (settings.StartMinimized) Hide();
         };
         Closing += Window_Closing;
@@ -188,7 +192,9 @@ public partial class MainWindow : Window
         : "Playing · independent EQ, volume, delay, and routing are active";
     private void CreateTray()
     {
-        tray = new Forms.NotifyIcon { Icon = System.Drawing.SystemIcons.Application, Text = "DualSync", Visible = true };
+        using (var stream = System.Windows.Application.GetResourceStream(new Uri("pack://application:,,,/DualSync;component/Assets/DualSync.ico"))!.Stream)
+        using (var embedded = new System.Drawing.Icon(stream)) trayIcon = (System.Drawing.Icon)embedded.Clone();
+        tray = new Forms.NotifyIcon { Icon = trayIcon, Text = "DualSync", Visible = true };
         var menu = new Forms.ContextMenuStrip();
         menu.Items.Add("Open DualSync", null, (_, _) => ShowWindow());
         menu.Items.Add("Start / stop audio", null, async (_, _) => { if (engine.IsRunning || wanted) await StopAsync(); else await StartAsync(); });
@@ -215,7 +221,7 @@ public partial class MainWindow : Window
         quitting = true; monitor.Stop(); saveTimer.Stop(); wanted = false; Save();
         while (model.Busy) await Task.Delay(25);
         try { await engine.DisposeAsync(); } catch (Exception ex) { Log(ex.ToString()); }
-        tray?.Dispose(); closed = true; _ = Dispatcher.BeginInvoke(Close);
+        tray?.Dispose(); trayIcon?.Dispose(); closed = true; _ = Dispatcher.BeginInvoke(Close);
     }
     private void UpdateProfileNames()
     {
@@ -294,20 +300,19 @@ public partial class MainWindow : Window
     }
     private void CopyDiagnostics_Click(object sender, RoutedEventArgs e)
     {
-        var report = new StringBuilder("DualSync 0.1.0-alpha.5\n").AppendLine(Environment.OSVersion.ToString()).AppendLine(model.Diagnostic);
+        var report = new StringBuilder("DualSync 0.1.0-alpha.6\n").AppendLine(Environment.OSVersion.ToString()).AppendLine(model.Diagnostic);
         foreach (var device in model.Devices) report.AppendLine(device.ToString() + " | " + device.Id);
         report.AppendLine("Profile:\n" + System.Text.Json.JsonSerializer.Serialize(model.Snapshot, SettingsStore.JsonOptions));
         Clipboard.SetText(report.ToString()); model.Status = "Diagnostic report copied. It includes device names, IDs, and audio settings.";
     }
     private void DataFolder_Click(object sender, RoutedEventArgs e) { Directory.CreateDirectory(DataDirectory); Process.Start(new ProcessStartInfo("explorer.exe", DataDirectory) { UseShellExecute = true }); }
-    private void Help_Click(object sender, RoutedEventArgs e) => MessageBox.Show(this,
-        "1. Pick a source endpoint that already receives your system audio. Both speakers must be different from this source.\n\n" +
-        "2. Choose Speaker A and Speaker B, then press Start audio. Stop audio before changing devices.\n\n" +
-        "3. On the dashboard, open each speaker's Equalizer dropdown to tune it and save custom EQ presets. Use Dual EQ presets to save both speakers' individual curves together. EQ loads keep your other audio settings. Choose left/right routing and add delay with the slider or ±1 ms buttons.\n\n" +
-        "The final buffer shown is the live queue plus your added delay. It excludes the fixed 5 ms limiter lookahead, Windows' output buffer, and Bluetooth/device latency. It is not an acoustic latency measurement.\n\n" +
-        "The original source can still be audible. Use a source that is silent independently of its Windows volume, or a suitable virtual endpoint you already have installed. Muting the source can also mute captured audio.\n\n" +
-        "Use Set up audio cable to download and open VB-Audio's official installer after opting in. Existing cables are reused. DualSync does not programmatically change Windows defaults.\n\n" +
-        "Windows volume mode is configured in Settings and needs a volume test on your source. Bluetooth clock drift and jitter can still change timing over time.", "Set up DualSync", MessageBoxButton.OK, MessageBoxImage.Information);
+    private void Help_Click(object sender, RoutedEventArgs e) => WorkspaceTabs.SelectedItem = SetupTab;
+    private void Dashboard_Click(object sender, RoutedEventArgs e) => WorkspaceTabs.SelectedItem = DashboardTab;
+    private void SoundSettings_Click(object sender, RoutedEventArgs e)
+    {
+        try { Process.Start(new ProcessStartInfo("ms-settings:sound") { UseShellExecute = true }); }
+        catch (Exception ex) { ShowError("Could not open Windows Sound settings", ex); }
+    }
     private void ShowError(string title, Exception ex) { lastError = ex.Message; model.Status = title + ": " + ex.Message; Log(ex.ToString()); }
     private static void Log(string text)
     {

@@ -26,13 +26,13 @@ Before changing a Windows default playback device, note the current device name.
 4. Mute each speaker in turn to confirm that its controls act independently.
 5. Choose left/right routing on each speaker card. Open its Equalizer dropdown to tune it. Add delay to whichever speaker you hear first, using the slider or ±1 ms buttons.
 
-The profile selector at the top saves and loads the complete two-speaker setup. Open **Manage profiles** for rename, delete, and reset actions. Settings and detailed diagnostics remain on the Settings page.
+Open **Full setup profiles** below the speaker cards to save or load the complete two-speaker setup, rename a saved profile, or reset the current setup. The Setup page provides a three-step first-playback guide. Settings and detailed diagnostics remain on the Settings page.
 
 ## Save custom EQ presets
 
 Open a speaker's **Equalizer** dropdown, adjust its bands, and enter a name under **Custom EQ presets**. Press **Save EQ**. The saved curve is available on either speaker: choose it from that speaker's saved EQ list and press **Load EQ**. For example, load a custom Rock curve on A and a custom Pop curve on B.
 
-To save that combination, enter **Indie** in **Dual EQ presets** and press **Save EQ**. Loading Indie later restores the saved A curve to A and the saved B curve to B. The pair contains copies of both curves, so editing or deleting an individual preset does not change it.
+To save that combination, open **Dual EQ presets** below the speaker cards, enter **Indie**, and press **Save EQ**. Loading Indie later restores the saved A curve to A and the saved B curve to B. The pair contains copies of both curves, so editing or deleting an individual preset does not change it.
 
 EQ presets store all ten bands and each EQ's enabled state. Loading them works during playback and leaves devices, volume, mute, routing, and delay alone. Selecting a saved name does not apply it until you press **Load EQ**. To update a saved preset, select or type its name and press **Replace EQ**; use a new name to keep another version. **Delete** removes the selected saved preset and keeps the current sound. Both libraries persist across restarts and full setup profile changes.
 

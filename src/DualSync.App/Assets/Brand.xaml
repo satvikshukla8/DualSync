@@ -1,0 +1,14 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <!-- Original DualSync artwork. Two speakers share a single signal. -->
+  <DrawingImage x:Key="BrandMark">
+    <DrawingImage.Drawing>
+      <DrawingGroup>
+        <GeometryDrawing Brush="#173831"><GeometryDrawing.Geometry><RectangleGeometry Rect="0,0,64,64" RadiusX="15" RadiusY="15"/></GeometryDrawing.Geometry></GeometryDrawing>
+        <GeometryDrawing Brush="#74DFCA"><GeometryDrawing.Geometry><RectangleGeometry Rect="12,15,16,34" RadiusX="5" RadiusY="5"/></GeometryDrawing.Geometry></GeometryDrawing>
+        <GeometryDrawing Brush="#E4BB7C"><GeometryDrawing.Geometry><RectangleGeometry Rect="36,15,16,34" RadiusX="5" RadiusY="5"/></GeometryDrawing.Geometry></GeometryDrawing>
+        <GeometryDrawing Brush="#173831"><GeometryDrawing.Geometry><GeometryGroup><EllipseGeometry Center="20,35" RadiusX="5" RadiusY="5"/><EllipseGeometry Center="44,35" RadiusX="5" RadiusY="5"/><EllipseGeometry Center="20,23" RadiusX="2" RadiusY="2"/><EllipseGeometry Center="44,23" RadiusX="2" RadiusY="2"/></GeometryGroup></GeometryDrawing.Geometry></GeometryDrawing>
+        <GeometryDrawing Geometry="M 28,28 L 36,28"><GeometryDrawing.Pen><Pen Brush="#F1F3F5" Thickness="2"/></GeometryDrawing.Pen></GeometryDrawing>
+      </DrawingGroup>
+    </DrawingImage.Drawing>
+  </DrawingImage>
+</ResourceDictionary>

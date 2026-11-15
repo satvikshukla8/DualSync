@@ -20,7 +20,9 @@ The 33 core tests cover:
 - Cable identification, download integrity, safe extraction, license preservation, and cancellation.
 - Single and dual EQ snapshot isolation, settings preservation, disk reload, replacement, deletion, limits, malformed entries, and migration.
 
-Five Windows app tests exercise cross-speaker EQ loading, batched dual loading, shared-list updates, full setup independence, and compiled WPF save/load bindings at a compact panel width. These tests do not open audio devices or change Windows settings.
+Five Windows app tests exercise cross-speaker EQ loading, batched dual loading, shared-list updates, full setup independence, and compiled WPF save/load bindings at a compact panel width. They also verify that styled EQ sliders retain their numeric range and live band binding. These tests do not open audio devices or change Windows settings.
+
+Passing `--screenshots docs/assets` to the built app test runner renders the actual workspace XAML with sample device names and synthetic queue values. Every preview is labelled as such. The renderer excludes event handlers and app startup, so it cannot start playback, install a cable, or modify user settings. Packaging runs this renderer and includes the resulting images. This checks presentation without claiming hardware playback.
 
 WASAPI format conversion is delegated to Windows rather than reimplemented. Resampling between endpoint formats therefore requires Windows integration testing. No adaptive resampler or clock-synchronization algorithm is claimed by this version.
 

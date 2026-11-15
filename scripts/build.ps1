@@ -11,7 +11,8 @@ try {
     if ($LASTEXITCODE -ne 0) { throw 'Build failed.' }
     & $Dotnet 'tests/DualSync.Tests/bin/Release/net10.0/DualSync.Tests.dll'
     if ($LASTEXITCODE -ne 0) { throw 'Tests failed.' }
-    & $Dotnet 'tests/DualSync.App.Tests/bin/Release/net10.0-windows/DualSync.App.Tests.dll'
+    $appTestArguments = if ($Package) { @('--screenshots', 'docs/assets') } else { @() }
+    & $Dotnet 'tests/DualSync.App.Tests/bin/Release/net10.0-windows/DualSync.App.Tests.dll' @appTestArguments
     if ($LASTEXITCODE -ne 0) { throw 'App tests failed.' }
     if ($Package) {
         $version = ([xml](Get-Content -Raw 'Directory.Build.props')).Project.PropertyGroup.Version
@@ -38,9 +39,13 @@ try {
         $docsPath = Join-Path $outputPath 'docs'
         New-Item -ItemType Directory -Path $docsPath -Force | Out-Null
         Copy-Item -Path 'docs/*.md' -Destination $docsPath
+        if (Test-Path -LiteralPath 'docs/assets') { Copy-Item -LiteralPath 'docs/assets' -Destination $docsPath -Recurse -Force }
         Get-ChildItem -LiteralPath $outputPath -File -Filter '*.pdb' | Remove-Item
         $archive = Join-Path $projectRoot "artifacts/DualSync-$version-win-x64.zip"
         Compress-Archive -Path (Join-Path $outputPath '*') -DestinationPath $archive -Force
-        Get-FileHash -Algorithm SHA256 -LiteralPath $archive | Format-List
+        $archiveHash = Get-FileHash -Algorithm SHA256 -LiteralPath $archive
+        $checksumText = $archiveHash.Hash.ToLowerInvariant() + '  ' + [IO.Path]::GetFileName($archive) + "`n"
+        [IO.File]::WriteAllText($archive + '.sha256', $checksumText, [Text.UTF8Encoding]::new($false))
+        $archiveHash | Format-List
     }
 } finally { Pop-Location }

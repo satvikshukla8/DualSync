@@ -54,6 +54,8 @@ public sealed class SpeakerViewModel : Observable
         new(ChannelMode.Custom, "Custom left / right mix")
     ];
     public string Title { get; }
+    public string Marker => Title.EndsWith('A') ? "A" : "B";
+    public string AccentColor => Marker == "A" ? "#74DFCA" : "#E4BB7C";
     public string Subtitle { get; }
     public ObservableCollection<AudioDevice> Devices { get; }
     public ObservableCollection<BandViewModel> Bands { get; }
@@ -136,7 +138,7 @@ public sealed class SpeakerViewModel : Observable
         Notify(nameof(QueueDisplay)); Notify(nameof(AddedDelayDisplay)); Notify(nameof(FinalBufferDisplay));
         Notify(nameof(CanDecreaseDelay)); Notify(nameof(CanIncreaseDelay));
     }
-    public string HeadroomText => "Peak protection reduces gain only if the audio would overload. No fixed EQ volume cut.";
+    public string HeadroomText => "Peak protection turns down only audio that would overload.";
     private void BandsChanged() { if (loading) return; Preset = null; Change(nameof(Snapshot)); }
     private void Change([CallerMemberName] string? property = null)
     {
@@ -221,7 +223,9 @@ public sealed class ShellViewModel : Observable
         DualEq.Refresh(EqLibrary.Duals.Select(p => p.Name));
     }
     public AudioProfile Snapshot => profile with { MasterVolume = master / 100, Speakers = [A.Snapshot, B.Snapshot] };
-    public string? SourceId { get => profile.SourceId; set { if (profile.SourceId == value) return; profile = profile with { SourceId = value }; Notify(); Changed?.Invoke(nameof(SourceId)); } }
+    public string? SourceId { get => profile.SourceId; set { if (profile.SourceId == value) return; profile = profile with { SourceId = value }; Notify(); Notify(nameof(SourceHint)); Changed?.Invoke(nameof(SourceId)); } }
+    public string SourceHint => SourceId is null ? "New here? Open Setup for the three steps to first playback."
+        : "Match this source to your Windows output. Stop audio to change devices.";
     public double Master { get => master; set { if (Set(ref master, Math.Round(value, 1))) Changed?.Invoke(nameof(Master)); } }
     public int MasterModeIndex
     {

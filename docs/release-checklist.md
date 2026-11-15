@@ -2,11 +2,13 @@
 
 ## Build and packaging
 
-- [x] Windows CI succeeds from a fresh checkout.
-- [x] Self-contained portable executable launches using its bundled runtime.
+- [ ] Current commit passes Windows CI from a fresh checkout (older alpha CI passed; verify this build separately).
+- [ ] Alpha 6 opens its main window after quitting the older instance (earlier alphas launched; alpha 6's duplicate-instance notice was verified).
 - [x] Package includes the app license, dependency notices, runtime notices, and setup documentation.
-- [ ] Version, artifact name, changelog, and checksum agree.
-- [ ] Review signing options and document the actual signing status.
+- [x] App, window, and tray have an original icon; screenshots and setup guidance are prepared.
+- [x] Version, artifact name, changelog, and checksum agree for the local alpha 6 package.
+- [x] Review signing options and document the actual signing status: unsigned, see signing.md.
+- [ ] Configure a trusted publisher identity and sign the build before claiming signed distribution.
 
 ## Acceptance
 
@@ -15,14 +17,16 @@
 - [ ] Source-volume behavior is verified and documented by driver.
 - [ ] Device loss, reconnection, shutdown, and tray behavior pass.
 - [ ] One-hour playback completes with recorded resource and buffer observations.
-- [ ] Virtual-endpoint installation and licensing are resolved before describing the app as a standalone Voicemeeter replacement.
+- [x] Offer opt-in setup of standard VB-CABLE, with attribution, license links, package integrity checks, and visible vendor confirmation.
 - [ ] Test the opt-in cable installer on a clean Windows machine, including UAC denial, existing/disabled cable, restart, and removal.
 
 ## Publication
 
 - [ ] Obtain explicit approval before making the repository public.
 - [ ] Obtain explicit approval before publishing any public release.
-- [ ] Keep driver installation and default-device changes opt-in.
-- [ ] Review all documentation for claims not backed by test evidence.
+- [x] Keep driver installation and default-device changes opt-in.
+- [x] Review documentation claims; rendered previews and pending hardware tests are identified.
 
 Updates are manual portable-package replacements for the alpha: quit the app, replace the application folder, and keep the separate settings folder. No automatic download, updater service, or background installer is included.
+
+The portable alpha can be reviewed privately while these gates remain open. Presentation work does not establish clean-machine installation, signing, acoustic synchronization, or long-session reliability.

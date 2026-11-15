@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.1.0-alpha.6 — 2026-11-15
+
+- Put source and speaker controls first, with compact dropdowns for dual EQ presets and full setup profiles below them.
+- Added a three-step Setup page, first-run guidance, and a direct link to Windows Sound settings.
+- Added original vector artwork and a multi-resolution icon for the executable, windows, and tray.
+- Refined the dark theme, A/B accents, sliders, selector placeholders, focus states, and spacing.
+- Added reproducible interface previews using sample data without opening audio devices.
+- Rewrote the README and prepared release notes, signing guidance, and a focused validation checklist.
+- Added a separate SHA-256 checksum to portable packages and included documentation images.
+
+The alpha remains unsigned. Clean-PC installation and physical long-session, reconnect, and sleep/wake tests remain release gates. No public release has been published.
+
 ## 0.1.0-alpha.5 — 2026-10-29
 
 - Added named custom EQ presets that can be saved from and loaded onto either speaker.

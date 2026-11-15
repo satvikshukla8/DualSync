@@ -1,5 +1,6 @@
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.IO;
@@ -83,7 +84,13 @@ internal static class Program
                 var load = Descendants<Button>(panel).Single(b => Equals(b.Content, "Load EQ"));
                 Check(load.IsEnabled && shell.A.SavedEq.HasSelection, "Load availability binding failed");
                 Check(Descendants<FrameworkElement>(panel).All(e => double.IsFinite(e.ActualWidth)), "Template did not lay out");
+                var band = Descendants<Slider>(panel).First();
+                band.Value = 5.5; panel.UpdateLayout();
+                var track = Descendants<Track>(band).Single();
+                Check(shell.A.Bands[0].Gain == 5.5 && track.Value == 5.5 && track.Minimum == -12 && track.Maximum == 12, "Styled EQ slider lost its band value or range binding");
                 if (args.Contains("--render")) RenderPreview(shell, resources);
+                var screenshotArg = Array.IndexOf(args, "--screenshots");
+                if (screenshotArg >= 0) ScreenshotRenderer.Render(args[screenshotArg + 1]);
                 app.Shutdown();
             })
         };

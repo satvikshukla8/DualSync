@@ -13,7 +13,7 @@
                           Foreground="{TemplateBinding Foreground}" HorizontalContentAlignment="Stretch">
               <ToggleButton.Template>
                 <ControlTemplate TargetType="ToggleButton">
-                  <Border x:Name="HeaderBorder" Background="#202E40" CornerRadius="8" Padding="13,11">
+                  <Border x:Name="HeaderBorder" Background="{StaticResource InputBrush}" CornerRadius="6" Padding="12,10" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1">
                     <ContentPresenter/>
                   </Border>
                   <ControlTemplate.Triggers>
@@ -66,7 +66,7 @@
         <TextBlock Text="10-band equalizer" FontWeight="SemiBold" VerticalAlignment="Center"/>
         <CheckBox Content="Enabled" IsChecked="{Binding EqEnabled}" HorizontalAlignment="Right"/>
       </DockPanel>
-      <local:EqCurve Settings="{Binding Snapshot}" Height="135" Margin="0,8,0,5" AutomationProperties.Name="Equalizer frequency response"/>
+      <local:EqCurve Settings="{Binding Snapshot}" CurveBrush="{Binding AccentColor}" Height="115" Margin="0,8,0,5" AutomationProperties.Name="Equalizer frequency response"/>
       <TextBlock Text="EQ response · dB / Hz" Style="{StaticResource Muted}" FontSize="11" Margin="0,0,0,12"/>
       <ItemsControl ItemsSource="{Binding Bands}">
         <ItemsControl.ItemsPanel><ItemsPanelTemplate><UniformGrid Columns="10"/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
@@ -74,7 +74,8 @@
           <DataTemplate>
             <StackPanel HorizontalAlignment="Center">
               <TextBlock Text="{Binding Gain, StringFormat={}{0:+0.0;-0.0;0.0}}" FontSize="11" HorizontalAlignment="Center"/>
-              <Slider Orientation="Vertical" Height="145" Minimum="-12" Maximum="12" TickFrequency="1" SmallChange="0.5"
+              <Slider Orientation="Vertical" Height="115" Minimum="-12" Maximum="12" TickFrequency="1" SmallChange="0.5"
+                      Foreground="{Binding DataContext.AccentColor, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
                       Value="{Binding Gain}" AutomationProperties.Name="{Binding Label, StringFormat={}{0} Hz gain dB}"/>
               <TextBlock Text="{Binding Label}" FontSize="11" HorizontalAlignment="Center" Foreground="{StaticResource MutedBrush}"/>
             </StackPanel>
@@ -87,21 +88,21 @@
         <ComboBox ItemsSource="{Binding PresetNames}" SelectedItem="{Binding Preset}" AutomationProperties.Name="EQ preset" Margin="0,0,12,0"/>
         <Button Grid.Column="1" Content="Reset EQ" Command="{Binding ResetEqCommand}"/>
       </Grid>
-      <TextBlock Text="Custom EQ presets · use on either speaker" FontWeight="SemiBold" Margin="0,18,0,8"/>
+      <TextBlock Text="Custom EQ presets" FontWeight="SemiBold" Margin="0,18,0,8"/>
       <ContentControl Content="{Binding SavedEq}" ContentTemplate="{StaticResource SavedEqPicker}"/>
-      <TextBlock Text="Saves this speaker's 10 bands and EQ enabled state. Use a new name to keep another version."
+      <TextBlock Text="Save this curve for either speaker. Use a new name to keep another version."
                  Style="{StaticResource Muted}" FontSize="12" Margin="0,8,0,0"/>
       <TextBlock Text="{Binding HeadroomText}" Style="{StaticResource Muted}" FontSize="12" Margin="0,12,0,0"/>
     </StackPanel>
   </DataTemplate>
 
   <DataTemplate x:Key="SpeakerCard">
-    <Border Style="{StaticResource Card}" Padding="22">
+    <Border Style="{StaticResource Card}" Padding="16">
       <StackPanel>
-        <DockPanel>
-          <TextBlock Text="{Binding Title}" FontSize="24" FontWeight="SemiBold"/>
-          <TextBlock Text="OUTPUT" Foreground="{StaticResource AccentBrush}" FontSize="11" VerticalAlignment="Center" HorizontalAlignment="Right"/>
-        </DockPanel>
+        <StackPanel Orientation="Horizontal">
+          <Border Width="28" Height="28" CornerRadius="6" Background="#26342F" Margin="0,0,10,0"><TextBlock Text="{Binding Marker}" Foreground="{Binding AccentColor}" FontWeight="SemiBold" HorizontalAlignment="Center" VerticalAlignment="Center"/></Border>
+          <TextBlock Text="{Binding Title}" FontSize="20" FontWeight="SemiBold" VerticalAlignment="Center"/>
+        </StackPanel>
         <ComboBox ItemsSource="{Binding Devices}" SelectedValuePath="Id" SelectedValue="{Binding DeviceId}"
                   IsEnabled="{Binding DataContext.CanSelectDevices, RelativeSource={RelativeSource AncestorType=Window}}"
                   AutomationProperties.Name="{Binding Title, StringFormat={}{0} device}" Margin="0,12,0,10"/>
@@ -111,11 +112,11 @@
           <TextBlock Text="{Binding Volume, StringFormat={}{0:0}%}" DockPanel.Dock="Right" Margin="10,0,0,0"/>
           <TextBlock Text="Volume" FontWeight="SemiBold"/>
         </DockPanel>
-        <Slider Value="{Binding Volume}" AutomationProperties.Name="{Binding Title, StringFormat={}{0} volume}"/>
-        <ProgressBar Value="{Binding Meter}" Maximum="100" Height="3" Foreground="{StaticResource AccentBrush}"
-                     Background="#26364B" BorderThickness="0" Margin="0,2,0,18"/>
+        <Slider Value="{Binding Volume}" Foreground="{Binding AccentColor}" AutomationProperties.Name="{Binding Title, StringFormat={}{0} volume}"/>
+        <ProgressBar Value="{Binding Meter}" Maximum="100" Height="2" Foreground="{Binding AccentColor}"
+                     Background="#303B47" BorderThickness="0" Margin="0,0,0,10"/>
 
-        <Border Background="#101A26" CornerRadius="10" Padding="13,12" Margin="0,0,0,14"
+        <Border Background="#11171D" CornerRadius="6" Padding="11,10" Margin="0,0,0,10"
                 ToolTip="Queue plus added delay only. Windows output buffering, 5 ms peak protection, and Bluetooth/device latency are additional.">
           <Grid>
             <Grid.ColumnDefinitions>
@@ -124,17 +125,17 @@
             </Grid.ColumnDefinitions>
             <StackPanel>
               <TextBlock Text="Queue" Style="{StaticResource Muted}" FontSize="11"/>
-              <TextBlock Text="{Binding QueueDisplay}" FontSize="20" FontWeight="SemiBold" Margin="0,5,0,0"/>
+              <TextBlock Text="{Binding QueueDisplay}" FontSize="18" FontWeight="SemiBold" Margin="0,5,0,0"/>
             </StackPanel>
             <TextBlock Grid.Column="1" Text="+" Foreground="{StaticResource MutedBrush}" VerticalAlignment="Center" HorizontalAlignment="Center" FontSize="18"/>
             <StackPanel Grid.Column="2">
               <TextBlock Text="Added delay" Style="{StaticResource Muted}" FontSize="11"/>
-              <TextBlock Text="{Binding AddedDelayDisplay}" FontSize="20" FontWeight="SemiBold" Margin="0,5,0,0"/>
+              <TextBlock Text="{Binding AddedDelayDisplay}" FontSize="18" FontWeight="SemiBold" Margin="0,5,0,0"/>
             </StackPanel>
             <TextBlock Grid.Column="3" Text="=" Foreground="{StaticResource MutedBrush}" VerticalAlignment="Center" HorizontalAlignment="Center" FontSize="18"/>
             <StackPanel Grid.Column="4">
-              <TextBlock Text="Final buffer" Foreground="{StaticResource AccentBrush}" FontSize="11"/>
-              <TextBlock Text="{Binding FinalBufferDisplay}" Foreground="{StaticResource AccentBrush}" FontSize="20" FontWeight="SemiBold" Margin="0,5,0,0"/>
+              <TextBlock Text="Final buffer" Foreground="{Binding AccentColor}" FontSize="11"/>
+              <TextBlock Text="{Binding FinalBufferDisplay}" Foreground="{Binding AccentColor}" FontSize="18" FontWeight="SemiBold" Margin="0,5,0,0"/>
             </StackPanel>
           </Grid>
         </Border>
@@ -148,12 +149,13 @@
           <TextBlock Text="Added delay" FontWeight="SemiBold" VerticalAlignment="Center"/>
         </DockPanel>
         <Slider Minimum="0" Maximum="500" TickFrequency="1" IsSnapToTickEnabled="True" Value="{Binding DelayMs}"
+                Foreground="{Binding AccentColor}"
                 SmallChange="1" LargeChange="10" AutomationProperties.Name="{Binding Title, StringFormat={}{0} delay milliseconds}"/>
         <TextBlock Text="Add delay to the speaker you hear first." Style="{StaticResource Muted}" FontSize="12"/>
 
-        <TextBlock Text="Left / right routing" FontWeight="SemiBold" Margin="0,19,0,0"/>
+        <TextBlock Text="Left / right routing" FontWeight="SemiBold" Margin="0,12,0,0"/>
         <ComboBox ItemsSource="{Binding ChannelOptions}" DisplayMemberPath="Label" SelectedValuePath="Value" SelectedValue="{Binding ChannelMode}"
-                  AutomationProperties.Name="{Binding Title, StringFormat={}{0} channel routing}" Margin="0,8,0,6"/>
+                  AutomationProperties.Name="{Binding Title, StringFormat={}{0} channel routing}" Margin="0,6,0,4"/>
         <TextBlock Text="{Binding RoutingDescription}" Style="{StaticResource Muted}" FontSize="12"/>
         <StackPanel Visibility="{Binding CustomMixEnabled, Converter={StaticResource BooleanVisibility}}" Margin="0,12,0,0">
           <DockPanel><TextBlock Text="Left contribution" FontSize="12"/><TextBlock Text="{Binding LeftMix, StringFormat={}{0:P0}}" HorizontalAlignment="Right" FontSize="12"/></DockPanel>
@@ -163,11 +165,11 @@
           <TextBlock Text="Combined weights above 100% are normalized to prevent extra gain." Style="{StaticResource Muted}" FontSize="11"/>
         </StackPanel>
 
-        <Expander Header="Equalizer · tune this speaker" Style="{StaticResource DashboardExpander}" Margin="0,20,0,0"
+        <Expander Header="Equalizer &amp; custom presets" Style="{StaticResource DashboardExpander}" Margin="0,12,0,0"
                   AutomationProperties.Name="{Binding Title, StringFormat={}{0} equalizer dropdown}">
           <ContentControl Content="{Binding}" ContentTemplate="{StaticResource EqPanel}"/>
         </Expander>
-        <TextBlock Text="{Binding Telemetry}" Style="{StaticResource Muted}" FontSize="11" Margin="0,14,0,0"/>
+        <TextBlock Text="{Binding Telemetry}" Style="{StaticResource Muted}" FontSize="11" Margin="0,10,0,0"/>
       </StackPanel>
     </Border>
   </DataTemplate>

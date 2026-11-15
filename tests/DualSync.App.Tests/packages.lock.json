@@ -26,14 +26,14 @@
       "DualSync": {
         "type": "Project",
         "dependencies": {
-          "DualSync.Audio": "[0.1.0-alpha.5, )",
-          "DualSync.Setup": "[0.1.0-alpha.5, )"
+          "DualSync.Audio": "[0.1.0-alpha.6, )",
+          "DualSync.Setup": "[0.1.0-alpha.6, )"
         }
       },
       "dualsync.audio": {
         "type": "Project",
         "dependencies": {
-          "DualSync.Core": "[0.1.0-alpha.5, )",
+          "DualSync.Core": "[0.1.0-alpha.6, )",
           "NAudio.Wasapi": "[3.2.0, )"
         }
       },
@@ -43,7 +43,7 @@
       "dualsync.setup": {
         "type": "Project",
         "dependencies": {
-          "DualSync.Core": "[0.1.0-alpha.5, )"
+          "DualSync.Core": "[0.1.0-alpha.6, )"
         }
       }
     },

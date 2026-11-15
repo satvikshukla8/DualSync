@@ -1,7 +1,7 @@
 <Window x:Class="DualSync.App.CableSetupWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="DualSync · audio cable setup" Width="720" Height="730" MinWidth="620" MinHeight="580"
+        Title="DualSync · audio cable setup" Icon="Assets/DualSync.ico" Width="720" Height="730" MinWidth="620" MinHeight="580"
         WindowStartupLocation="CenterOwner" Background="{StaticResource BackgroundBrush}"
         Foreground="{StaticResource TextBrush}" FontFamily="Segoe UI" FontSize="14">
   <ScrollViewer VerticalScrollBarVisibility="Auto">

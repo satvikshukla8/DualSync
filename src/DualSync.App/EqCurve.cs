@@ -9,11 +9,13 @@ public sealed class EqCurve : FrameworkElement
 {
     public static readonly DependencyProperty SettingsProperty = DependencyProperty.Register(nameof(Settings), typeof(SpeakerSettings), typeof(EqCurve), new FrameworkPropertyMetadata(null, FrameworkPropertyMetadataOptions.AffectsRender));
     public SpeakerSettings? Settings { get => (SpeakerSettings?)GetValue(SettingsProperty); set => SetValue(SettingsProperty, value); }
+    public static readonly DependencyProperty CurveBrushProperty = DependencyProperty.Register(nameof(CurveBrush), typeof(Brush), typeof(EqCurve), new FrameworkPropertyMetadata(Brushes.MediumAquamarine, FrameworkPropertyMetadataOptions.AffectsRender));
+    public Brush CurveBrush { get => (Brush)GetValue(CurveBrushProperty); set => SetValue(CurveBrushProperty, value); }
     protected override void OnRender(DrawingContext dc)
     {
         base.OnRender(dc);
         var w = Math.Max(1, ActualWidth - 40); var h = Math.Max(1, ActualHeight - 22);
-        dc.DrawRoundedRectangle(new SolidColorBrush(Color.FromRgb(16, 23, 33)), null, new(0, 0, ActualWidth, ActualHeight), 10, 10);
+        dc.DrawRoundedRectangle(new SolidColorBrush(Color.FromRgb(17, 23, 29)), null, new(0, 0, ActualWidth, ActualHeight), 6, 6);
         for (var db = -24; db <= 24; db += 12)
         {
             var y = 8 + (24 - db) / 48.0 * (h - 16);
@@ -38,7 +40,7 @@ public sealed class EqCurve : FrameworkElement
                 if (i == 0) context.BeginFigure(point, false, false); else context.LineTo(point, true, false);
             }
         }
-        dc.DrawGeometry(null, new(new SolidColorBrush(Color.FromRgb(97, 219, 202)), 2), geometry);
+        dc.DrawGeometry(null, new(CurveBrush, 2), geometry);
     }
     private void Text(DrawingContext dc, string text, double x, double y) => dc.DrawText(new FormattedText(text, CultureInfo.InvariantCulture, FlowDirection.LeftToRight, new Typeface("Segoe UI"), 10, new SolidColorBrush(Color.FromRgb(151, 168, 190)), VisualTreeHelper.GetDpi(this).PixelsPerDip), new(x, y));
 }

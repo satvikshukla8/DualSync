@@ -4,10 +4,12 @@
     <UseWPF>true</UseWPF><UseWindowsForms>true</UseWindowsForms>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <AssemblyName>DualSync</AssemblyName>
+    <ApplicationIcon>Assets/DualSync.ico</ApplicationIcon>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="../DualSync.Audio/DualSync.Audio.csproj" />
     <ProjectReference Include="../DualSync.Setup/DualSync.Setup.csproj" />
   </ItemGroup>
   <ItemGroup><Using Remove="System.Windows.Forms"/><Using Remove="System.Drawing"/></ItemGroup>
+  <ItemGroup><Resource Include="Assets/DualSync.ico" /></ItemGroup>
 </Project>

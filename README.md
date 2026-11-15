@@ -1,100 +1,97 @@
+<img src="docs/assets/dualsync.svg" width="64" alt="DualSync icon">
+
 # DualSync
 
-A free, open-source Windows 11 desktop app for playing system audio through two independently tuned speakers.
+Play Windows audio through two speakers, with a separate EQ, volume, channel mix, and delay for each.
 
-DualSync is being built for everyday setups such as two Bluetooth speakers with different sound characteristics and playback delays. The interface focuses on independent equalization, simple volume controls, and speaker timing.
+Built for setups such as two Bluetooth speakers that sound different or play slightly out of time. Tune each speaker, save your curves, and adjust the earlier speaker in 1 ms steps.
 
-**Status: runnable alpha, under hardware validation.** The desktop app and audio engine build successfully, with 33 core tests and five Windows app tests. A silent two-output WASAPI test passed two start/stop cycles. The portable app launches and its interface has been inspected. The owner reports working Bluetooth playback, EQ, and Windows volume on the test setup. Long-session reliability and acoustic timing still require testing. There is no published GitHub release.
+**Windows 11 · x64 · Portable alpha 6 · MIT**
 
-## Included in the alpha
+This is a development alpha. The owner reports working playback, EQ, and Windows volume on their setup. Fresh-PC installation and longer hardware sessions are still being validated. A public release has not been published.
 
-- Optional integrated VB-CABLE setup: automatic download and extraction, signature checks, and the official administrator installer.
-- Two independently selected Windows playback devices.
-- A separate 10-band equalizer for each speaker, with presets and signal-dependent peak protection.
-- Saved custom EQ presets for either speaker, plus dual EQ presets that restore both speakers' individual curves together.
-- Master volume, individual speaker volume, and mute.
-- Independent playback delay from 0–500 ms.
-- Stereo, left, right, mono, and custom channel mixing.
-- One dashboard with profiles, inline left/right routing, and collapsible per-speaker EQ.
-- Live queue + added delay = final software buffer, with ±1 ms delay buttons.
-- System tray controls and device reconnection handling.
-- Optional Windows source-volume control, with a device-specific verification procedure.
+![DualSync dashboard with two speaker cards, source selection, and buffer totals](docs/assets/dashboard.png)
 
-Independent Bluetooth devices have their own clocks and buffering. Static delay can reduce a steady timing difference; sample-accurate wireless synchronization is not promised.
+*Interface preview rendered from the app's XAML. Device names and queue values are sample data; audio is stopped.*
+
+## What you can do
+
+- Send one source to two different Windows playback devices.
+- Tune each speaker with a 10-band EQ and peak protection.
+- Save custom EQ curves for either speaker, or save both curves together as a dual preset.
+- Set master and per-speaker volume, mute, and stereo/left/right/mono/custom routing.
+- Add 0–500 ms of delay with a slider and ±1 ms buttons.
+- Read each speaker's live queue + added delay = final software buffer.
+- Save full setups containing devices, EQ, levels, routing, and delay.
+- Keep playback running in the tray and retry devices during an active session after a disconnect.
+
+Independent Bluetooth devices have their own clocks and buffers. Manual delay can improve a steady timing difference; it does not correct clock drift or guarantee sample-accurate synchronization.
+
+## First playback
+
+1. **Open the portable app.** Extract the whole ZIP and run `DualSync.exe`. Its .NET runtime is included. Quit any older DualSync instance from the tray first.
+2. **Choose a source.** Open the app's Setup page. If you need a virtual source, choose **Set up audio cable** to reuse an existing VB-CABLE or open VB-Audio's official installer after opting in. Driver installation needs administrator approval and may need a restart.
+3. **Route Windows audio.** Open Windows Sound settings and select the same source as your Windows output. For standard VB-CABLE this is usually **CABLE Input**. Record your previous output so you can switch back later.
+4. **Choose two speakers.** On the Dashboard, select a source and two different outputs, then press **Start audio**. Mute each speaker in turn to verify both receive audio.
+5. **Tune and save.** Open a speaker's Equalizer dropdown to adjust and save its curve. Add delay to the speaker you hear first. Dual EQ presets and full setup profiles are below the speaker cards.
+
+The source must differ from both speakers, and the two speakers must be different devices. A physical source may also play the original audio; a suitable silent source avoids that extra playback. Stop audio before changing devices.
+
+See the [setup guide](docs/installation.md), [cable setup details](docs/cable-setup.md), and [troubleshooting](docs/troubleshooting.md).
+
+## EQ presets
+
+Save **Rock** from Speaker A and **Pop** from Speaker B. Either saved curve can be loaded onto either speaker. To save that exact combination, save a dual EQ preset named **Indie**; loading it restores Rock to A and Pop to B together.
+
+EQ presets save bands and enabled states. Full setup profiles also save devices, volume, mute, routing, and delay. Both types persist across restarts. Loading EQ works during playback; loading a full setup stops audio so you can check the route.
+
+![Two independent equalizers and saved custom EQ presets](docs/assets/equalizers.png)
+
+*Rendered interface with sample settings. Dual presets keep copies of both curves, so changing an individual preset later does not alter the saved pair.*
+
+## Downloads and trust
+
+There is no public download yet. Local builds create a self-contained ZIP and matching `.sha256` file under `artifacts`. Alpha 6 is unsigned; Windows security or organization policies may warn about or block it. See [signing status](docs/signing.md). Keep Windows security enabled.
+
+The optional standard VB-CABLE driver is proprietary donationware from [VB-Audio](https://vb-audio.com/Cable/). It is downloaded on demand and is not included in this repository or the portable ZIP. Its setup helper checks the reviewed package hash and vendor signatures, preserves the original license, and opens the visible official installer. See [license and setup details](docs/cable-setup.md).
+
+## Build
+
+Requirements: Windows 11 and the .NET SDK pinned in `global.json`.
+
+```powershell
+./scripts/build.ps1 -Package
+```
+
+The script restores locked dependencies, builds the solution, runs 33 core tests and five Windows app tests, then packages the app with documentation and license notices. It also writes a ZIP checksum. CI uses the same script and uploads private workflow artifacts.
+
+To regenerate the documentation previews without opening audio devices:
+
+```powershell
+dotnet tests/DualSync.App.Tests/bin/Release/net10.0-windows/DualSync.App.Tests.dll --screenshots docs/assets
+```
+
+The app icon is generated from `Assets/Brand.xaml` by `scripts/generate-artwork.ps1`. All original artwork is covered by the project's MIT license.
 
 ## Project structure
 
 ```text
-DualSync/
-├── src/
-│   ├── DualSync.Core/          # DSP, bounded buffers, routing, profiles, settings
-│   ├── DualSync.Audio/         # WASAPI capture, output streams, device discovery
-│   ├── DualSync.Setup/         # Verified cable download and vendor installer launch
-│   └── DualSync.App/           # WPF desktop UI, EQ graphs, tray and app lifecycle
-├── tests/
-│   ├── DualSync.Tests/         # Synthetic-audio and configuration tests
-│   └── DualSync.App.Tests/     # EQ workflows and compiled WPF binding checks
-├── tools/
-│   └── DualSync.Diagnostics/   # Windows endpoint and engine diagnostics
-├── docs/
-│   ├── architecture.md         # Audio pipeline, module boundaries, open decisions
-│   ├── installation.md         # Setup, volume mode, data, removal
-│   ├── testing.md              # Automated evidence and hardware procedures
-│   └── troubleshooting.md      # Routing, devices, volume, and diagnostics
-├── scripts/build.ps1           # Locked restore, build, tests, portable packaging
-├── .github/workflows/          # Windows build and private workflow artifacts
-├── DualSync.slnx
-├── Directory.Build.props
-└── global.json
+src/
+  DualSync.Core/          DSP, buffers, routing, profiles, EQ libraries, settings
+  DualSync.Audio/         WASAPI capture, playback, and endpoint discovery
+  DualSync.Setup/         Verified cable preparation and vendor installer launch
+  DualSync.App/           WPF workspace, setup guide, artwork, and tray
+tests/
+  DualSync.Tests/         Synthetic-audio and persistence checks
+  DualSync.App.Tests/     EQ workflows, template bindings, and preview renderer
+tools/
+  DualSync.Diagnostics/   Endpoint inspection and audio-engine diagnostics
+docs/                   Setup, testing, architecture, and release preparation
+scripts/                Build, package, and icon generation
 ```
 
-## Technology
+See [architecture](docs/architecture.md), [test evidence](docs/testing.md), [release notes](docs/release-notes-alpha.6.md), and the [release checklist](docs/release-checklist.md). Remaining work centers on clean-machine setup, longer hardware sessions, reconnection/sleep testing, and distribution signing.
 
-C# and .NET 10, WPF, and NAudio 3.2 WASAPI APIs. The DSP and settings layer is independent of Windows and the UI. Windows performs shared-mode output format conversion when an endpoint uses a different sample rate or format.
+## License
 
-## Audio architecture
-
-```text
-Windows playback source
-        │
-   WASAPI loopback
-        │
-   48 kHz float stereo
-        │
-        ├── Buffer A → Routing → EQ → Gain → Delay → Speaker A
-        └── Buffer B → Routing → EQ → Gain → Delay → Speaker B
-```
-
-The initial backend captures an existing playback endpoint. The source must be different from both output devices to prevent feedback. A physical source may also play its original audio, so a suitable silent source is needed for a two-speaker-only setup.
-
-A dedicated virtual endpoint is under evaluation. Driver licensing, current Windows signing requirements, volume behavior, and redistribution must be verified before choosing a driver. The application will not silently install drivers or change Windows default audio devices.
-
-See [the architecture document](docs/architecture.md) for the decisions and remaining constraints.
-
-## Development
-
-Requirements: Windows 11 and the .NET SDK specified in `global.json`.
-
-```powershell
-dotnet restore DualSync.slnx --locked-mode
-dotnet build DualSync.slnx -c Release --no-restore
-dotnet run --project tests/DualSync.Tests -c Release --no-build
-```
-
-Or run `./scripts/build.ps1 -Package` to perform the checks and create a self-contained Windows x64 portable ZIP under `artifacts`. Extract the whole ZIP and run `DualSync.exe`; no separate .NET runtime is required. The CI workflow uses the same script and uploads a workflow artifact without publishing a release.
-
-Read [installation](docs/installation.md) before choosing a source, and use the focused [hardware test checklist](docs/testing.md). Another application holding a Bluetooth endpoint in exclusive mode must release it before DualSync can use it.
-
-## Roadmap
-
-1. Prove capture and simultaneous playback on real devices.
-2. Verify independent EQ and audio quality.
-3. Verify Windows volume behavior and select a practical virtual-endpoint strategy.
-4. Validate delay and channel routing.
-5. Finish profiles, tray operation, and reconnection behavior.
-6. Improve long-session buffering and drift handling.
-7. Package a Windows build and complete release checks.
-
-## Licensing
-
-DualSync's original code is licensed under [MIT](LICENSE). See [third-party notices](THIRD_PARTY_NOTICES.md) for the resolved dependencies and bundled runtime licenses. No third-party driver is included in this repository.
+DualSync's original code and artwork are [MIT licensed](LICENSE). Dependencies and the bundled runtime retain their own licenses; see [third-party notices](THIRD_PARTY_NOTICES.md). The separately installed VB-CABLE driver keeps VB-Audio's license.
