@@ -23,3 +23,14 @@ Record hardware results in the table below. The development PC already has a vir
 | Pending | | | | |
 
 Keep existing audio routing intact during development checks. Physical playback and Windows output changes require deliberate tester action. Never replace a pending hardware result with an offline DSP result or a rendered screenshot.
+
+## Published release verification — 2026-11-15
+
+- [Public release](https://github.com/satvikshukla8/DualSync/releases/tag/v0.1.0-alpha.7), marked as a prerelease.
+- Tagged source commit: `109e18c03717ac3ddf7ad53f0c6fe2bcc30d7af1`.
+- [Windows workflow](https://github.com/satvikshukla8/DualSync/actions/runs/43799180849): build, all 49 checks, packaging, and artifact upload passed.
+- Release assets were taken from that exact workflow artifact. Its digest and the executable's source version were verified before publication.
+- Repository metadata, release metadata, and the source tag were readable without authentication. The Windows ZIP and checksum were downloaded without authentication and matched the verified artifact.
+- Windows ZIP SHA-256: `0bde7cd001a8cee8964f7a3fb67659e3c0462ca68d25523575e94c46ea135dfa`.
+
+The hardware acceptance gaps above remain open. No Reddit post was submitted as part of this launch preparation.

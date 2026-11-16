@@ -74,4 +74,4 @@ Install the SDK specified in `global.json`, then run:
 ./scripts/build.ps1 -Package
 ```
 
-The portable folder and ZIP appear under `artifacts`. Local SDK paths can be supplied through `-Dotnet`. Dependencies are pinned by committed lock files. CI runs the same script and uploads a private workflow artifact; it does not publish a GitHub release.
+The portable folder and ZIP appear under `artifacts`. Local SDK paths can be supplied through `-Dotnet`. Dependencies are pinned by committed lock files. CI runs the same script and uploads a workflow artifact; publishing a tagged GitHub release is a separate owner-approved step.

@@ -24,7 +24,8 @@
 ## Publication
 
 - [x] Owner explicitly approved a public repository and the first public alpha release on 2026-11-15.
-- [x] Public README, download links, release notes, and issue templates are prepared.
+- [x] Public README, download links, release notes, and issue templates are available.
+- [x] First public alpha is published at v0.1.0-alpha.7 with its Windows ZIP and checksum; anonymous download and checksum verification passed.
 - [x] Keep driver installation and default-device changes opt-in.
 - [x] Review documentation claims; rendered previews and pending hardware tests are identified.
 
