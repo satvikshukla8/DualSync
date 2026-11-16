@@ -1,0 +1,5 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Setup and troubleshooting
+    url: https://github.com/satvikshukla8/DualSync/blob/main/docs/troubleshooting.md
+    about: Start here for common source, cable, volume, and routing problems.

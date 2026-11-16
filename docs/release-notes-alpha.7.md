@@ -11,4 +11,4 @@ Adds optional Auto Sync using three-second averages of the two application queue
 
 See [Auto Sync](auto-sync.md) for the calculation and limits. This aligns application buffers; Bluetooth/device latency and acoustic timing are not measured. Physical playback acceptance is still pending.
 
-The local suite has 40 core checks and nine Windows app checks. Existing fresh-PC, long-session, reconnection, and signing gates remain in the [release checklist](release-checklist.md). No public release has been published.
+The suite has 40 core checks and nine Windows app checks. Existing fresh-PC, long-session, reconnection, and signing checks remain in the [release checklist](release-checklist.md). This is the first public alpha, not a stable production release.

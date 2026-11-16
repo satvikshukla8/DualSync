@@ -6,4 +6,4 @@ Keep Windows-specific code in the Audio and App projects. Changes to audio callb
 
 Discuss driver integration before adding a driver dependency. Verify licensing, redistribution, signing, Windows 11 support, volume behavior, and a safe installation/removal path. Disabling security controls is not a supported installation strategy.
 
-The repository remains private during development. Publishing a release or changing visibility requires the owner's approval.
+The repository is public. Use issues for reproducible bugs and proposed improvements, and submit focused pull requests against `main`. Publishing a release or changing repository visibility requires the owner's approval.

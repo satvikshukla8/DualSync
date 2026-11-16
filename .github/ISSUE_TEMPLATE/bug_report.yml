@@ -1,0 +1,46 @@
+name: Bug report
+description: Report a problem with playback, setup, Auto Sync, EQ, or the interface.
+body:
+  - type: markdown
+    attributes:
+      value: "Thanks for trying the alpha. Describe what you observed; remove personal device names or IDs before attaching diagnostics."
+  - type: input
+    id: app_version
+    attributes:
+      label: DualSync version
+      placeholder: 0.1.0-alpha.7
+    validations:
+      required: true
+  - type: input
+    id: windows_version
+    attributes:
+      label: Windows version
+      placeholder: Windows 11, version and build if known
+    validations:
+      required: true
+  - type: input
+    id: audio_setup
+    attributes:
+      label: Audio source and speaker models
+      description: Model names are enough; device IDs are not needed.
+      placeholder: VB-CABLE source, speaker A model, speaker B model
+  - type: dropdown
+    id: sync_mode
+    attributes:
+      label: Sync mode
+      options:
+        - Manual delay
+        - Auto Sync
+        - Not applicable
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: What happened, and how can we reproduce it?
+      description: Include what you expected, what happened, and whether it happens every time.
+    validations:
+      required: true
+  - type: textarea
+    id: extra
+    attributes:
+      label: Screenshots or additional details
+      description: Optional. Check attachments for personal information before sharing.

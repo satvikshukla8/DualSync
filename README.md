@@ -8,7 +8,11 @@ Built for setups such as two Bluetooth speakers that sound different or play sli
 
 **Windows 11 · x64 · Portable alpha 7 · MIT**
 
-This is a development alpha. The owner reports working playback, EQ, and Windows volume on their setup. Fresh-PC installation and longer hardware sessions are still being validated. A public release has not been published.
+[**Download for Windows x64 (ZIP)**](https://github.com/satvikshukla8/DualSync/releases/download/v0.1.0-alpha.7/DualSync-0.1.0-alpha.7-win-x64.zip) · [Release notes](https://github.com/satvikshukla8/DualSync/releases/tag/v0.1.0-alpha.7) · [SHA-256 checksum](https://github.com/satvikshukla8/DualSync/releases/download/v0.1.0-alpha.7/DualSync-0.1.0-alpha.7-win-x64.zip.sha256)
+
+[![Windows build](https://github.com/satvikshukla8/DualSync/actions/workflows/windows.yml/badge.svg)](https://github.com/satvikshukla8/DualSync/actions/workflows/windows.yml)
+
+This is the first public alpha. Playback, EQ, and Windows volume were reported working on the original setup. Auto Sync, fresh-PC installation, and longer hardware sessions still need broader testing. The Windows app is unsigned.
 
 ![DualSync dashboard with two speaker cards, source selection, and buffer totals](docs/assets/dashboard.png)
 
@@ -30,7 +34,7 @@ Independent Bluetooth devices have their own clocks and buffers. Auto Sync align
 
 ## First playback
 
-1. **Open the portable app.** Extract the whole ZIP and run `DualSync.exe`. Its .NET runtime is included. Quit any older DualSync instance from the tray first.
+1. **Open the portable app.** Download the Windows ZIP above, extract the whole folder, and run `DualSync.exe`. Its .NET runtime is included. Quit any older DualSync instance from the tray first.
 2. **Choose a source.** Open the app's Setup page. If you need a virtual source, choose **Set up audio cable** to reuse an existing VB-CABLE or open VB-Audio's official installer after opting in. Driver installation needs administrator approval and may need a restart.
 3. **Route Windows audio.** Open Windows Sound settings and select the same source as your Windows output. For standard VB-CABLE this is usually **CABLE Input**. Record your previous output so you can switch back later.
 4. **Choose two speakers.** On the Dashboard, select a source and two different outputs, then press **Start audio**. Mute each speaker in turn to verify both receive audio.
@@ -52,7 +56,9 @@ EQ presets save bands and enabled states. Full setup profiles also save devices,
 
 ## Downloads and trust
 
-There is no public download yet. Local builds create a self-contained ZIP and matching `.sha256` file under `artifacts`. Alpha 7 is unsigned; Windows security or organization policies may warn about or block it. See [signing status](docs/signing.md). Keep Windows security enabled.
+The [official GitHub release](https://github.com/satvikshukla8/DualSync/releases/tag/v0.1.0-alpha.7) contains the self-contained Windows ZIP and matching `.sha256` checksum. Extract the complete ZIP before running the app. Alpha 7 is unsigned; Windows security or organization policies may warn about or block it. See [signing status](docs/signing.md). Keep Windows security enabled.
+
+To check a download, run `Get-FileHash .\DualSync-0.1.0-alpha.7-win-x64.zip -Algorithm SHA256` in PowerShell and compare it with the checksum file from the same release.
 
 The optional standard VB-CABLE driver is proprietary donationware from [VB-Audio](https://vb-audio.com/Cable/). It is downloaded on demand and is not included in this repository or the portable ZIP. Its setup helper checks the reviewed package hash and vendor signatures, preserves the original license, and opens the visible official installer. See [license and setup details](docs/cable-setup.md).
 
@@ -64,7 +70,7 @@ Requirements: Windows 11 and the .NET SDK pinned in `global.json`.
 ./scripts/build.ps1 -Package
 ```
 
-The script restores locked dependencies, builds the solution, runs 40 core tests and nine Windows app tests, then packages the app with documentation and license notices. It also writes a ZIP checksum. CI uses the same script and uploads private workflow artifacts.
+The script restores locked dependencies, builds the solution, runs 40 core tests and nine Windows app tests, then packages the app with documentation and license notices. It also writes a ZIP checksum. CI uses the same script and uploads workflow artifacts; published downloads are attached to tagged GitHub releases.
 
 To regenerate the documentation previews without opening audio devices:
 
@@ -92,6 +98,10 @@ scripts/                Build, package, and icon generation
 ```
 
 See [architecture](docs/architecture.md), [test evidence](docs/testing.md), [release notes](docs/release-notes-alpha.7.md), and the [release checklist](docs/release-checklist.md). Remaining work centers on clean-machine setup, longer hardware sessions, reconnection/sleep testing, and distribution signing.
+
+## Feedback and contributions
+
+[Report a bug](https://github.com/satvikshukla8/DualSync/issues/new?template=bug_report.yml) with your app version, Windows version, speaker models, and what happened. Setup and Auto Sync feedback are especially useful for this alpha. Remove personal device names or IDs before sharing diagnostics. For code changes, see [Contributing](CONTRIBUTING.md).
 
 ## License
 
